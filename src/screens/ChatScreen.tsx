@@ -128,6 +128,8 @@ export function ChatScreen({ route }: Props) {
           onPress={handleSend}
           disabled={!input.trim() || sending}
           activeOpacity={0.8}
+          accessibilityLabel="Enviar mensagem"
+          accessibilityRole="button"
         >
           {sending ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={styles.sendIcon}>↑</Text>}
         </TouchableOpacity>
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 4, paddingHorizontal: 14, paddingVertical: 10,
     color: C.text1, fontFamily: F.body, fontSize: 14, maxHeight: 100,
   },
-  sendBtn:         { backgroundColor: C.gold, width: 40, height: 40, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
+  sendBtn:         { backgroundColor: C.gold, width: 44, height: 44, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
   sendBtnDisabled: { opacity: 0.35 },
   sendIcon:        { color: C.bg, fontSize: 18, fontWeight: '700' },
 });

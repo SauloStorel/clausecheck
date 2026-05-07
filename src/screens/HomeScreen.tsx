@@ -76,7 +76,13 @@ export function HomeScreen({ navigation }: Props) {
           <Text style={styles.title}>Contratos</Text>
           <Text style={styles.subtitle}>{analyses.length} analisado{analyses.length !== 1 ? 's' : ''}</Text>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={styles.logoutBtn}
+          accessibilityLabel="Sair da conta"
+          accessibilityRole="button"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Text style={styles.logoutText}>SAIR</Text>
         </TouchableOpacity>
       </Animated.View>

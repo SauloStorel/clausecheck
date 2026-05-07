@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Image,
   StyleSheet, Alert, ActivityIndicator, ScrollView, Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -99,7 +100,12 @@ export function NovaAnaliseScreen({ navigation }: Props) {
               <View style={styles.uploadRow}>
                 {(['camera', 'galeria'] as const).map(o => (
                   <TouchableOpacity key={o} style={styles.uploadBtn} onPress={() => escolherImagem(o)} activeOpacity={0.7}>
-                    <Text style={styles.uploadIcon}>{o === 'camera' ? '◉' : '▣'}</Text>
+                    <Ionicons
+                      name={o === 'camera' ? 'camera-outline' : 'image-outline'}
+                      size={28}
+                      color={C.goldDim}
+                      style={{ marginBottom: 10 }}
+                    />
                     <Text style={styles.uploadLabel}>{o === 'camera' ? 'Câmera' : 'Galeria'}</Text>
                   </TouchableOpacity>
                 ))}
@@ -164,7 +170,6 @@ const styles = StyleSheet.create({
     flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 4,
     borderStyle: 'dashed', paddingVertical: 36, alignItems: 'center', backgroundColor: C.surface,
   },
-  uploadIcon:      { fontFamily: F.mono, fontSize: 24, color: C.goldDim, marginBottom: 10 },
   uploadLabel:     { fontFamily: F.body, fontSize: 13, color: C.text2 },
   preview:         { width: '100%', height: 220, borderRadius: 4, marginBottom: 8, borderWidth: 1, borderColor: C.border },
   trocar:          { fontFamily: F.mono, fontSize: 10, color: C.text3, textAlign: 'center', marginBottom: 24, letterSpacing: 1 },

@@ -146,7 +146,15 @@ export function LoginScreen({ navigation }: Props) {
             onBlur={() => setFocusedField(null)}
           />
 
-          {error !== '' && <Text style={styles.errorText}>{error}</Text>}
+          {error !== '' && (
+            <Text
+              style={styles.errorText}
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+            >
+              {error}
+            </Text>
+          )}
           <View style={styles.divider} />
         </Animated.View>
 

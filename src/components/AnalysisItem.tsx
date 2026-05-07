@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Analysis } from '../types';
 import { C, F, riskColors } from '../constants/theme';
@@ -8,7 +8,7 @@ interface Props {
   onPress: () => void;
 }
 
-export function AnalysisItem({ analysis, onPress }: Props) {
+export const AnalysisItem = memo(function AnalysisItem({ analysis, onPress }: Props) {
   const date = new Date(analysis.created_at).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
@@ -28,7 +28,7 @@ export function AnalysisItem({ analysis, onPress }: Props) {
       )}
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
