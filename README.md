@@ -159,6 +159,30 @@ Escaneie o QR Code com o **Expo Go** no celular.
 
 ---
 
+## 🤝 Como Contribuir
+
+Contribuições são bem-vindas! Para contribuir:
+
+1. **Fork** o repositório
+2. Crie uma **branch** para sua feature (`git checkout -b feature/melhoria`)
+3. **Commit** suas mudanças (`git commit -m 'Add: nova funcionalidade'`)
+4. **Push** para a branch (`git push origin feature/melhoria`)
+5. Abra um **Pull Request**
+
+### Diretrizes
+- Siga o padrão de commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
+- Adicione testes para novas funcionalidades
+- Atualize o README se necessário
+- Mantenha a compatibilidade com React Native
+
+---
+
+## 🔒 Segurança
+
+Se você descobrir uma vulnerabilidade, **não abra uma issue pública**. Leia nossa [Política de Segurança](SECURITY.md) para mais detalhes.
+
+---
+
 ## 📸 Prints das Telas
 
 <table>
@@ -214,4 +238,12 @@ clausecheck/
 
 ## 📄 Licença
 
-Projeto acadêmico — uso educacional.
+Este projeto está licenciado sob a [MIT License](LICENSE) — veja o arquivo `LICENSE` para detalhes.
+
+---
+
+## 📞 Contato e Suporte
+
+- **GitHub Issues:** Para bugs e sugestões de features
+- **Email:** saulostorell@gmail.com
+- **Segurança:** Veja [SECURITY.md](SECURITY.md)
