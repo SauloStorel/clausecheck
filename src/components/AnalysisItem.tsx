@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Analysis } from '../types';
-import { RiskBadge } from './RiskBadge';
+import { C, F, riskColors } from '../constants/theme';
 
 interface Props {
   analysis: Analysis;
@@ -9,43 +9,72 @@ interface Props {
 }
 
 export function AnalysisItem({ analysis, onPress }: Props) {
-  const date = new Date(analysis.created_at).toLocaleDateString('pt-BR');
+  const date = new Date(analysis.created_at).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+  const risk = analysis.risk_level ? riskColors[analysis.risk_level] : null;
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.container} activeOpacity={0.7}>
+    <TouchableOpacity onPress={onPress} style={styles.container} activeOpacity={0.75}>
+      {risk && <View style={[styles.stripe, { backgroundColor: risk.fg }]} />}
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={1}>{analysis.title}</Text>
         <Text style={styles.date}>{date}</Text>
       </View>
-      {analysis.risk_level && <RiskBadge level={analysis.risk_level} />}
+      {risk && (
+        <View style={[styles.riskPill, { backgroundColor: risk.bg, borderColor: risk.border }]}>
+          <View style={[styles.riskDot, { backgroundColor: risk.fg }]} />
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: C.surface,
+    borderRadius: 4,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: C.border,
+    overflow: 'hidden',
+  },
+  stripe: {
+    width: 3,
+    alignSelf: 'stretch',
   },
   content: {
     flex: 1,
-    marginRight: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
   },
   title: {
-    color: '#f3f4f6',
+    fontFamily: F.body,
+    color: C.text1,
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 4,
   },
   date: {
-    color: '#6b7280',
-    fontSize: 12,
+    fontFamily: F.mono,
+    color: C.text3,
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+  riskPill: {
+    marginRight: 14,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  riskDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 });

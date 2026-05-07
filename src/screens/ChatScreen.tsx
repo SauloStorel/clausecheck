@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image,
+  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 import { sendChatMessage } from '../services/claude';
 import { MessageBubble } from '../components/MessageBubble';
 import { Analysis, Message, RootStackParamList } from '../types';
+import { C, F } from '../constants/theme';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Chat'>;
@@ -22,11 +24,10 @@ export function ChatScreen({ route }: Props) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [focused, setFocused] = useState(false);
   const listRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     try {
@@ -34,9 +35,7 @@ export function ChatScreen({ route }: Props) {
         supabase.from('analyses').select('*').eq('id', analysisId).single(),
         supabase.from('messages').select('*').eq('analysis_id', analysisId).order('created_at'),
       ]);
-
       setAnalysis(anal);
-
       if (msgs && msgs.length === 0) {
         await insertWelcome(anal);
       } else {
@@ -50,61 +49,44 @@ export function ChatScreen({ route }: Props) {
   }
 
   async function insertWelcome(anal: Analysis | null) {
-    const welcomeContent = `Olá! Analisei o contrato **${anal?.title ?? 'sem título'}** e estou pronto para responder suas dúvidas. O que você gostaria de saber?`;
+    const content = `Analisei o contrato "${anal?.title ?? 'sem título'}". O que você gostaria de saber?`;
     const { data } = await supabase.from('messages').insert({
-      analysis_id: analysisId,
-      role: 'assistant',
-      content: welcomeContent,
+      analysis_id: analysisId, role: 'assistant', content,
     }).select().single();
     if (data) setMessages([data]);
   }
 
   async function handleSend() {
     if (!input.trim() || sending) return;
-
     const userContent = input.trim();
     setInput('');
     setSending(true);
-
     const { data: userMsg } = await supabase.from('messages').insert({
-      analysis_id: analysisId,
-      role: 'user',
-      content: userContent,
+      analysis_id: analysisId, role: 'user', content: userContent,
     }).select().single();
-
     if (userMsg) setMessages(prev => [...prev, userMsg]);
-
     try {
-      const contractText = analysis?.input_text ?? analysis?.report
-        ? JSON.stringify(analysis.report)
-        : 'Contrato sem texto disponível';
-
+      const contractText = analysis?.input_text ?? JSON.stringify(analysis?.report ?? {});
       const reply = await sendChatMessage(contractText, messages, userContent);
-
       const { data: assistantMsg } = await supabase.from('messages').insert({
-        analysis_id: analysisId,
-        role: 'assistant',
-        content: reply,
+        analysis_id: analysisId, role: 'assistant', content: reply,
       }).select().single();
-
       if (assistantMsg) setMessages(prev => [...prev, assistantMsg]);
     } catch {
-      Alert.alert('Erro', 'Não foi possível obter resposta. Tente novamente.');
+      Alert.alert('Erro', 'Não foi possível obter resposta.');
     } finally {
       setSending(false);
     }
   }
 
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-    }
+    if (messages.length > 0) setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
   }, [messages]);
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color="#4f46e5" size="large" />
+        <ActivityIndicator color={C.gold} size="large" />
       </View>
     );
   }
@@ -115,41 +97,53 @@ export function ChatScreen({ route }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={90}
     >
-      <View style={styles.chatHeader}>
-        <Text style={styles.avatarEmoji}>⚖️</Text>
-        <View>
+      {/* Custom sub-header */}
+      <View style={styles.subHeader}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>§</Text>
+        </View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.aiName}>ClauseCheck IA</Text>
           <Text style={styles.contractName} numberOfLines={1}>{analysis?.title}</Text>
         </View>
       </View>
 
+      <View style={styles.divider} />
+
       <FlatList
         ref={listRef}
         data={messages}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => <MessageBubble message={item} />}
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInDown.delay(index < 5 ? index * 60 : 0).duration(300)}>
+            <MessageBubble message={item} />
+          </Animated.View>
+        )}
         contentContainerStyle={styles.messageList}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+        showsVerticalScrollIndicator={false}
       />
 
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
         <TextInput
           style={styles.input}
-          placeholder="Pergunte algo sobre o contrato..."
-          placeholderTextColor="#555"
+          placeholder="Pergunte sobre o contrato..."
+          placeholderTextColor={C.text3}
           value={input}
           onChangeText={setInput}
           multiline
           maxLength={500}
-          onSubmitEditing={handleSend}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
         />
         <TouchableOpacity
           style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
           onPress={handleSend}
           disabled={!input.trim() || sending}
+          activeOpacity={0.8}
         >
           {sending
-            ? <ActivityIndicator color="#fff" size="small" />
+            ? <ActivityIndicator color={C.bg} size="small" />
             : <Text style={styles.sendIcon}>↑</Text>
           }
         </TouchableOpacity>
@@ -159,50 +153,60 @@ export function ChatScreen({ route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f0f' },
-  centered: { flex: 1, backgroundColor: '#0f0f0f', justifyContent: 'center', alignItems: 'center' },
-  chatHeader: {
+  container:      { flex: 1, backgroundColor: C.bg },
+  centered:       { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
+  subHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
   },
-  avatarEmoji: { fontSize: 28 },
-  aiName: { color: '#f3f4f6', fontSize: 15, fontWeight: '600' },
-  contractName: { color: '#6b7280', fontSize: 12, maxWidth: 260 },
-  messageList: { paddingVertical: 12, paddingBottom: 8 },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 4,
+    backgroundColor: C.goldDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText:    { fontFamily: 'Georgia', fontSize: 18, color: C.gold },
+  aiName:        { fontFamily: F.body, fontSize: 14, color: C.text1, fontWeight: '600' },
+  contractName:  { fontFamily: F.mono, fontSize: 11, color: C.text3, maxWidth: 260, marginTop: 1 },
+  divider:       { height: StyleSheet.hairlineWidth, backgroundColor: C.border },
+  messageList:   { paddingVertical: 16, paddingBottom: 8 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
     borderTopWidth: 1,
-    borderTopColor: '#1a1a1a',
+    borderTopColor: C.border,
+    backgroundColor: C.bg,
   },
+  inputRowFocused: { borderTopColor: C.goldDim },
   input: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: C.surface,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 20,
-    paddingHorizontal: 16,
+    borderColor: C.border,
+    borderRadius: 4,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    color: '#f3f4f6',
+    color: C.text1,
+    fontFamily: F.body,
     fontSize: 14,
     maxHeight: 100,
   },
   sendBtn: {
-    backgroundColor: '#4f46e5',
+    backgroundColor: C.gold,
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  sendBtnDisabled: { opacity: 0.35 },
+  sendIcon:        { color: C.bg, fontSize: 18, fontWeight: '700' },
 });

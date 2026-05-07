@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, ActivityIndicator, ScrollView, Platform,
+  StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
+import Animated, {
+  FadeInDown, useSharedValue, useAnimatedStyle,
+  withSpring, withTiming,
+} from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import { analyzeContractText, analyzeContractImage } from '../services/claude';
 import { RootStackParamList } from '../types';
+import { C, F } from '../constants/theme';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'NovaAnalise'>;
 };
-
 type Modo = 'foto' | 'texto';
 
 export function NovaAnaliseScreen({ navigation }: Props) {
@@ -22,6 +27,17 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   const [imagemUri, setImagemUri] = useState<string | null>(null);
   const [titulo, setTitulo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const tabIndicatorX = useSharedValue(0);
+  const tabIndicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tabIndicatorX.value }],
+  }));
+
+  function switchModo(m: Modo) {
+    setModo(m);
+    tabIndicatorX.value = withSpring(m === 'foto' ? 0 : 1, { damping: 20, stiffness: 200 });
+  }
 
   async function escolherImagem(origem: 'camera' | 'galeria') {
     const options: ImagePicker.ImagePickerOptions = {
@@ -29,14 +45,10 @@ export function NovaAnaliseScreen({ navigation }: Props) {
       quality: 0.6,
       allowsEditing: false,
     };
-
     const result = origem === 'camera'
       ? await ImagePicker.launchCameraAsync(options)
       : await ImagePicker.launchImageLibraryAsync(options);
-
-    if (!result.canceled && result.assets[0]) {
-      setImagemUri(result.assets[0].uri);
-    }
+    if (!result.canceled && result.assets[0]) setImagemUri(result.assets[0].uri);
   }
 
   async function handleAnalisar() {
@@ -48,20 +60,15 @@ export function NovaAnaliseScreen({ navigation }: Props) {
       Alert.alert('Atenção', 'Cole o texto do contrato (mínimo 50 caracteres).');
       return;
     }
-
     setLoading(true);
     try {
       let report;
-
       if (modo === 'foto' && imagemUri) {
-        const base64 = await FileSystem.readAsStringAsync(imagemUri, {
-          encoding: 'base64',
-        });
+        const base64 = await FileSystem.readAsStringAsync(imagemUri, { encoding: 'base64' });
         report = await analyzeContractImage(base64);
       } else {
         report = await analyzeContractText(texto);
       }
-
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('analyses')
@@ -75,9 +82,7 @@ export function NovaAnaliseScreen({ navigation }: Props) {
         })
         .select()
         .single();
-
       if (error) throw error;
-
       navigation.replace('Relatorio', { analysisId: data.id });
     } catch (err: any) {
       Alert.alert('Erro na análise', err.message ?? 'Tente novamente.');
@@ -87,158 +92,199 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.heading}>Analisar Contrato</Text>
-      <Text style={styles.subheading}>Envie o contrato por foto ou cole o texto</Text>
-
-      <View style={styles.tabs}>
-        {(['foto', 'texto'] as Modo[]).map(m => (
-          <TouchableOpacity
-            key={m}
-            style={[styles.tab, modo === m && styles.tabActive]}
-            onPress={() => setModo(m)}
-          >
-            <Text style={[styles.tabText, modo === m && styles.tabTextActive]}>
-              {m === 'foto' ? '📷 Foto' : '📝 Texto'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {modo === 'foto' ? (
-        <View>
-          {imagemUri ? (
-            <TouchableOpacity onPress={() => setImagemUri(null)}>
-              <Image source={{ uri: imagemUri }} style={styles.preview} />
-              <Text style={styles.trocar}>Toque para trocar a imagem</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.fotoActions}>
-              <TouchableOpacity style={styles.fotoBtn} onPress={() => escolherImagem('camera')}>
-                <Text style={styles.fotoBtnIcon}>📷</Text>
-                <Text style={styles.fotoBtnText}>Câmera</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.fotoBtn} onPress={() => escolherImagem('galeria')}>
-                <Text style={styles.fotoBtnIcon}>🖼️</Text>
-                <Text style={styles.fotoBtnText}>Galeria</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      ) : (
-        <TextInput
-          style={styles.textArea}
-          placeholder="Cole ou digite o texto do contrato aqui..."
-          placeholderTextColor="#555"
-          value={texto}
-          onChangeText={setTexto}
-          multiline
-          numberOfLines={10}
-          textAlignVertical="top"
-        />
-      )}
-
-      <TextInput
-        style={styles.input}
-        placeholder="Nome do contrato (opcional)"
-        placeholderTextColor="#555"
-        value={titulo}
-        onChangeText={setTitulo}
-      />
-
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleAnalisar}
-        disabled={loading}
-        activeOpacity={0.8}
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['bottom']}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {loading ? (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator color="#fff" style={{ marginRight: 10 }} />
-            <Text style={styles.buttonText}>Analisando com IA...</Text>
+        <Animated.View entering={FadeInDown.delay(60).duration(400)}>
+          {/* Tabs */}
+          <View style={styles.tabsWrapper}>
+            {(['foto', 'texto'] as Modo[]).map(m => (
+              <TouchableOpacity
+                key={m}
+                style={styles.tab}
+                onPress={() => switchModo(m)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.tabText, modo === m && styles.tabTextActive]}>
+                  {m === 'foto' ? 'Foto / Imagem' : 'Colar Texto'}
+                </Text>
+                {modo === m && <View style={styles.tabUnderline} />}
+              </TouchableOpacity>
+            ))}
           </View>
-        ) : (
-          <Text style={styles.buttonText}>🔍 Analisar com IA</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+
+          <View style={styles.divider} />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(140).duration(400)}>
+          {modo === 'foto' ? (
+            imagemUri ? (
+              <TouchableOpacity onPress={() => setImagemUri(null)} activeOpacity={0.8}>
+                <Image source={{ uri: imagemUri }} style={styles.preview} />
+                <Text style={styles.trocar}>Toque para trocar</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.uploadRow}>
+                {(['camera', 'galeria'] as const).map(o => (
+                  <TouchableOpacity
+                    key={o}
+                    style={styles.uploadBtn}
+                    onPress={() => escolherImagem(o)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.uploadIcon}>{o === 'camera' ? '◉' : '▣'}</Text>
+                    <Text style={styles.uploadLabel}>{o === 'camera' ? 'Câmera' : 'Galeria'}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )
+          ) : (
+            <TextInput
+              style={[styles.textArea, focusedField === 'text' && styles.textAreaFocused]}
+              placeholder="Cole ou digite o texto do contrato aqui..."
+              placeholderTextColor={C.text3}
+              value={texto}
+              onChangeText={setTexto}
+              multiline
+              textAlignVertical="top"
+              onFocus={() => setFocusedField('text')}
+              onBlur={() => setFocusedField(null)}
+            />
+          )}
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(220).duration(400)}>
+          <Text style={styles.fieldLabel}>NOME DO CONTRATO</Text>
+          <TextInput
+            style={[styles.input, focusedField === 'titulo' && styles.inputFocused]}
+            placeholder="Opcional"
+            placeholderTextColor={C.text3}
+            value={titulo}
+            onChangeText={setTitulo}
+            onFocus={() => setFocusedField('titulo')}
+            onBlur={() => setFocusedField(null)}
+          />
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={{ marginTop: 32 }}>
+          <TouchableOpacity
+            style={[styles.button, loading && { opacity: 0.7 }]}
+            onPress={handleAnalisar}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color={C.bg} size="small" style={{ marginRight: 10 }} />
+                <Text style={styles.buttonText}>ANALISANDO...</Text>
+              </View>
+            ) : (
+              <Text style={styles.buttonText}>ANALISAR CONTRATO</Text>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f0f' },
-  content: { padding: 20, paddingBottom: 40 },
-  heading: { color: '#f3f4f6', fontSize: 22, fontWeight: '700', marginBottom: 4 },
-  subheading: { color: '#6b7280', fontSize: 14, marginBottom: 20 },
-  tabs: {
+  container:  { flex: 1, backgroundColor: C.bg },
+  content:    { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60 },
+  tabsWrapper: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 10,
-    padding: 4,
-    marginBottom: 20,
+    marginBottom: 0,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingBottom: 12,
     alignItems: 'center',
-    borderRadius: 8,
+    position: 'relative',
   },
-  tabActive: { backgroundColor: '#4f46e5' },
-  tabText: { color: '#6b7280', fontSize: 14, fontWeight: '600' },
-  tabTextActive: { color: '#fff' },
-  fotoActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+  tabText: {
+    fontFamily: F.body,
+    fontSize: 14,
+    color: C.text3,
+    fontWeight: '500',
   },
-  fotoBtn: {
+  tabTextActive: { color: C.text1 },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: C.gold,
+  },
+  divider:     { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginBottom: 24 },
+  uploadRow:   { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  uploadBtn: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
-    borderWidth: 2,
-    borderColor: '#2a2a2a',
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 4,
     borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingVertical: 30,
+    paddingVertical: 36,
     alignItems: 'center',
+    backgroundColor: C.surface,
   },
-  fotoBtnIcon: { fontSize: 28, marginBottom: 8 },
-  fotoBtnText: { color: '#9ca3af', fontSize: 13 },
+  uploadIcon:  { fontFamily: F.mono, fontSize: 24, color: C.goldDim, marginBottom: 10 },
+  uploadLabel: { fontFamily: F.body, fontSize: 13, color: C.text2 },
   preview: {
     width: '100%',
     height: 220,
-    borderRadius: 12,
-    marginBottom: 6,
-  },
-  trocar: { color: '#6b7280', fontSize: 12, textAlign: 'center', marginBottom: 16 },
-  textArea: {
-    backgroundColor: '#1a1a1a',
+    borderRadius: 4,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 12,
+    borderColor: C.border,
+  },
+  trocar:      { fontFamily: F.mono, fontSize: 10, color: C.text3, textAlign: 'center', marginBottom: 24, letterSpacing: 1 },
+  textArea: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 4,
     padding: 14,
-    color: '#f3f4f6',
+    color: C.text1,
+    fontFamily: F.body,
     fontSize: 14,
     minHeight: 180,
-    marginBottom: 16,
+    backgroundColor: C.surface,
+    marginBottom: 24,
+  },
+  textAreaFocused: { borderColor: C.gold },
+  fieldLabel: {
+    fontFamily: F.mono,
+    fontSize: 10,
+    color: C.text3,
+    letterSpacing: 2,
+    marginBottom: 8,
+    marginTop: 4,
   },
   input: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#f3f4f6',
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    paddingVertical: 10,
     fontSize: 15,
-    marginBottom: 20,
+    fontFamily: F.body,
+    color: C.text1,
   },
+  inputFocused: { borderBottomColor: C.gold },
   button: {
-    backgroundColor: '#4f46e5',
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: C.gold,
+    borderRadius: 4,
+    paddingVertical: 17,
     alignItems: 'center',
   },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  buttonText: {
+    fontFamily: F.body,
+    color: C.bg,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 3,
+  },
   loadingRow: { flexDirection: 'row', alignItems: 'center' },
 });

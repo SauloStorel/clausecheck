@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { RiskLevel } from '../types';
+import { C, F, riskColors } from '../constants/theme';
 
-const config: Record<RiskLevel, { label: string; bg: string; color: string }> = {
-  high:   { label: '🔴 Alto risco', bg: '#7f1d1d', color: '#fca5a5' },
-  medium: { label: '🟡 Atenção',    bg: '#78350f', color: '#fcd34d' },
-  low:    { label: '🟢 Ok',         bg: '#14532d', color: '#86efac' },
+const labels: Record<RiskLevel, string> = {
+  high:   'ALTO RISCO',
+  medium: 'ATENÇÃO',
+  low:    'APROVADO',
 };
 
 interface Props {
@@ -13,23 +14,35 @@ interface Props {
 }
 
 export function RiskBadge({ level }: Props) {
-  const { label, bg, color } = config[level];
+  const { fg, bg, border } = riskColors[level];
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.text, { color }]}>{label}</Text>
+    <View style={[styles.badge, { backgroundColor: bg, borderColor: border }]}>
+      <View style={[styles.dot, { backgroundColor: fg }]} />
+      <Text style={[styles.text, { color: fg }]}>{labels[level]}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 5,
+    borderRadius: 3,
+    borderWidth: 1,
     alignSelf: 'flex-start',
   },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
   text: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontFamily: F.mono,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
 });
