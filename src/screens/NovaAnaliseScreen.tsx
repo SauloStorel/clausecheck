@@ -31,6 +31,20 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   const btn    = useEntrance(300);
 
   async function escolherImagem(origem: 'camera' | 'galeria') {
+    if (origem === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão negada', 'Permita o acesso à câmera nas configurações do dispositivo.');
+        return;
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão negada', 'Permita o acesso à galeria nas configurações do dispositivo.');
+        return;
+      }
+    }
+
     const options: ImagePicker.ImagePickerOptions = {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.6, allowsEditing: false,
