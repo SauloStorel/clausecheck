@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Animated,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
@@ -36,11 +35,8 @@ export function ChatScreen({ route }: Props) {
         supabase.from('messages').select('*').eq('analysis_id', analysisId).order('created_at'),
       ]);
       setAnalysis(anal);
-      if (msgs && msgs.length === 0) {
-        await insertWelcome(anal);
-      } else {
-        setMessages(msgs ?? []);
-      }
+      if (msgs && msgs.length === 0) await insertWelcome(anal);
+      else setMessages(msgs ?? []);
     } catch {
       Alert.alert('Erro', 'Não foi possível carregar o chat.');
     } finally {
@@ -84,11 +80,7 @@ export function ChatScreen({ route }: Props) {
   }, [messages]);
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={C.gold} size="large" />
-      </View>
-    );
+    return <View style={styles.centered}><ActivityIndicator color={C.gold} size="large" /></View>;
   }
 
   return (
@@ -97,7 +89,6 @@ export function ChatScreen({ route }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={90}
     >
-      {/* Custom sub-header */}
       <View style={styles.subHeader}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>§</Text>
@@ -114,11 +105,7 @@ export function ChatScreen({ route }: Props) {
         ref={listRef}
         data={messages}
         keyExtractor={item => item.id}
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInDown.delay(index < 5 ? index * 60 : 0).duration(300)}>
-            <MessageBubble message={item} />
-          </Animated.View>
-        )}
+        renderItem={({ item }) => <MessageBubble message={item} />}
         contentContainerStyle={styles.messageList}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         showsVerticalScrollIndicator={false}
@@ -142,10 +129,7 @@ export function ChatScreen({ route }: Props) {
           disabled={!input.trim() || sending}
           activeOpacity={0.8}
         >
-          {sending
-            ? <ActivityIndicator color={C.bg} size="small" />
-            : <Text style={styles.sendIcon}>↑</Text>
-          }
+          {sending ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={styles.sendIcon}>↑</Text>}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -155,58 +139,24 @@ export function ChatScreen({ route }: Props) {
 const styles = StyleSheet.create({
   container:      { flex: 1, backgroundColor: C.bg },
   centered:       { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
-  subHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 4,
-    backgroundColor: C.goldDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText:    { fontFamily: 'Georgia', fontSize: 18, color: C.gold },
-  aiName:        { fontFamily: F.body, fontSize: 14, color: C.text1, fontWeight: '600' },
-  contractName:  { fontFamily: F.mono, fontSize: 11, color: C.text3, maxWidth: 260, marginTop: 1 },
-  divider:       { height: StyleSheet.hairlineWidth, backgroundColor: C.border },
-  messageList:   { paddingVertical: 16, paddingBottom: 8 },
+  subHeader:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  avatar:         { width: 36, height: 36, borderRadius: 4, backgroundColor: C.goldDim, alignItems: 'center', justifyContent: 'center' },
+  avatarText:     { fontFamily: 'Georgia', fontSize: 18, color: C.gold },
+  aiName:         { fontFamily: F.body, fontSize: 14, color: C.text1, fontWeight: '600' },
+  contractName:   { fontFamily: F.mono, fontSize: 11, color: C.text3, maxWidth: 260, marginTop: 1 },
+  divider:        { height: StyleSheet.hairlineWidth, backgroundColor: C.border },
+  messageList:    { paddingVertical: 16, paddingBottom: 8 },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    backgroundColor: C.bg,
+    flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16,
+    paddingVertical: 12, gap: 10, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg,
   },
   inputRowFocused: { borderTopColor: C.goldDim },
   input: {
-    flex: 1,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-    borderRadius: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    color: C.text1,
-    fontFamily: F.body,
-    fontSize: 14,
-    maxHeight: 100,
+    flex: 1, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
+    borderRadius: 4, paddingHorizontal: 14, paddingVertical: 10,
+    color: C.text1, fontFamily: F.body, fontSize: 14, maxHeight: 100,
   },
-  sendBtn: {
-    backgroundColor: C.gold,
-    width: 40,
-    height: 40,
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  sendBtn:         { backgroundColor: C.gold, width: 40, height: 40, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
   sendBtnDisabled: { opacity: 0.35 },
   sendIcon:        { color: C.bg, fontSize: 18, fontWeight: '700' },
 });

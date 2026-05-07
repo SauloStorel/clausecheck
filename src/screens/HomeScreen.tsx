@@ -1,9 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Animated, Easing,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -11,28 +10,50 @@ import { supabase } from '../services/supabase';
 import { AnalysisItem } from '../components/AnalysisItem';
 import { Analysis, RootStackParamList } from '../types';
 import { C, F } from '../constants/theme';
+import { useEntrance } from '../hooks/useEntrance';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 };
 
+function AnimatedItem({ children, index }: { children: React.ReactNode; index: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(14)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1, duration: 350, delay: index * 70, useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+      Animated.timing(translateY, {
+        toValue: 0, duration: 350, delay: index * 70, useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
+      {children}
+    </Animated.View>
+  );
+}
+
 export function HomeScreen({ navigation }: Props) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
+  const header = useEntrance(60);
 
   useFocusEffect(
-    useCallback(() => {
-      fetchAnalyses();
-    }, [])
+    useCallback(() => { fetchAnalyses(); }, [])
   );
 
   async function fetchAnalyses() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('analyses')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('analyses').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       setAnalyses(data ?? []);
     } catch {
@@ -49,7 +70,7 @@ export function HomeScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <Animated.View style={[styles.header, header]}>
         <View>
           <Text style={styles.title}>Contratos</Text>
           <Text style={styles.subtitle}>{analyses.length} analisado{analyses.length !== 1 ? 's' : ''}</Text>
@@ -57,7 +78,7 @@ export function HomeScreen({ navigation }: Props) {
         <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
           <Text style={styles.logoutText}>SAIR</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       <View style={styles.divider} />
 
@@ -68,17 +89,17 @@ export function HomeScreen({ navigation }: Props) {
           data={analyses}
           keyExtractor={item => item.id}
           renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInDown.delay(index * 70).duration(400)}>
+            <AnimatedItem index={index}>
               <AnalysisItem
                 analysis={item}
                 onPress={() => navigation.navigate('Relatorio', { analysisId: item.id })}
               />
-            </Animated.View>
+            </AnimatedItem>
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Animated.View entering={FadeInDown.delay(100)} style={styles.empty}>
+            <Animated.View style={[styles.empty, useEntrance(100)]}>
               <Text style={styles.emptyGlyph}>§</Text>
               <Text style={styles.emptyTitle}>Nenhum contrato ainda</Text>
               <Text style={styles.emptySubtext}>Toque em "Nova Análise" para começar.</Text>
@@ -87,11 +108,7 @@ export function HomeScreen({ navigation }: Props) {
         />
       )}
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('NovaAnalise')}
-        activeOpacity={0.85}
-      >
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('NovaAnalise')} activeOpacity={0.85}>
         <Text style={styles.fabText}>+ NOVA ANÁLISE</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -99,14 +116,10 @@ export function HomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: C.bg },
+  container: { flex: 1, backgroundColor: C.bg },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+    paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16,
   },
   title:       { fontFamily: 'Georgia', fontSize: 28, color: C.text1, letterSpacing: 0.5 },
   subtitle:    { fontFamily: F.mono, fontSize: 11, color: C.text3, letterSpacing: 1, marginTop: 2 },
@@ -114,29 +127,13 @@ const styles = StyleSheet.create({
   logoutText:  { fontFamily: F.mono, fontSize: 10, color: C.text3, letterSpacing: 2 },
   divider:     { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginHorizontal: 24 },
   list:        { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
-  empty: {
-    alignItems: 'center',
-    marginTop: 80,
-    paddingHorizontal: 40,
-  },
-  emptyGlyph:   { fontFamily: 'Georgia', fontSize: 56, color: C.goldDim, marginBottom: 16 },
-  emptyTitle:   { fontFamily: 'Georgia', fontSize: 20, color: C.text2, marginBottom: 8 },
-  emptySubtext: { fontFamily: F.body, fontSize: 13, color: C.text3, textAlign: 'center', lineHeight: 20 },
+  empty:       { alignItems: 'center', marginTop: 80, paddingHorizontal: 40 },
+  emptyGlyph:  { fontFamily: 'Georgia', fontSize: 56, color: C.goldDim, marginBottom: 16 },
+  emptyTitle:  { fontFamily: 'Georgia', fontSize: 20, color: C.text2, marginBottom: 8 },
+  emptySubtext:{ fontFamily: F.body, fontSize: 13, color: C.text3, textAlign: 'center', lineHeight: 20 },
   fab: {
-    position: 'absolute',
-    bottom: 32,
-    left: 24,
-    right: 24,
-    backgroundColor: C.gold,
-    borderRadius: 4,
-    paddingVertical: 17,
-    alignItems: 'center',
+    position: 'absolute', bottom: 32, left: 24, right: 24,
+    backgroundColor: C.gold, borderRadius: 4, paddingVertical: 17, alignItems: 'center',
   },
-  fabText: {
-    fontFamily: F.body,
-    color: C.bg,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 3,
-  },
+  fabText: { fontFamily: F.body, color: C.bg, fontSize: 12, fontWeight: '700', letterSpacing: 3 },
 });

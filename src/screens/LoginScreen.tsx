@@ -1,22 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, Dimensions,
+  StyleSheet, KeyboardAvoidingView, Platform, Dimensions, Animated, Easing,
 } from 'react-native';
-import Animated, {
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  withSpring,
-  Easing,
-} from 'react-native-reanimated';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import { RootStackParamList } from '../types';
 import { C, F } from '../constants/theme';
+import { useEntrance } from '../hooks/useEntrance';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Login'>;
@@ -24,27 +15,26 @@ type Props = {
 
 const { height } = Dimensions.get('window');
 
-function AnimatedRing({ size, delay, opacity }: { size: number; delay: number; opacity: number }) {
-  const scale = useSharedValue(0.88);
+function AnimatedRing({ size, delay, opacity: baseOpacity }: { size: number; delay: number; opacity: number }) {
+  const scale = useRef(new Animated.Value(0.88)).current;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.1, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0.88, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        false,
-      );
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scale, {
+            toValue: 1.1, duration: 2800, useNativeDriver: true,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          Animated.timing(scale, {
+            toValue: 0.88, duration: 2800, useNativeDriver: true,
+            easing: Easing.inOut(Easing.sin),
+          }),
+        ])
+      ).start();
     }, delay);
     return () => clearTimeout(timer);
   }, []);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity,
-  }));
 
   return (
     <Animated.View
@@ -56,8 +46,9 @@ function AnimatedRing({ size, delay, opacity }: { size: number; delay: number; o
           borderRadius: size / 2,
           borderWidth: 1,
           borderColor: C.gold,
+          opacity: baseOpacity,
         },
-        style,
+        { transform: [{ scale }] },
       ]}
     />
   );
@@ -71,8 +62,10 @@ export function LoginScreen({ navigation }: Props) {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const btnScale = useSharedValue(1);
-  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+  const brand   = useEntrance(80);
+  const form    = useEntrance(240);
+  const actions = useEntrance(400);
+  const btnScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -83,7 +76,12 @@ export function LoginScreen({ navigation }: Props) {
   async function handleAuth() {
     setError('');
     if (!email || !senha) { setError('Preencha e-mail e senha.'); return; }
-    btnScale.value = withSequence(withSpring(0.96), withSpring(1));
+
+    Animated.sequence([
+      Animated.timing(btnScale, { toValue: 0.96, duration: 80, useNativeDriver: true }),
+      Animated.timing(btnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
+    ]).start();
+
     setLoading(true);
     try {
       if (modo === 'login') {
@@ -107,7 +105,6 @@ export function LoginScreen({ navigation }: Props) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Animated rings */}
       <View style={styles.ringsContainer} pointerEvents="none">
         <AnimatedRing size={260} delay={0}   opacity={0.20} />
         <AnimatedRing size={400} delay={500} opacity={0.12} />
@@ -115,15 +112,13 @@ export function LoginScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.inner}>
-        {/* Brand */}
-        <Animated.View entering={FadeInDown.duration(700).delay(80)} style={styles.brandBlock}>
+        <Animated.View style={[styles.brandBlock, brand]}>
           <Text style={styles.brandIcon}>§</Text>
           <Text style={styles.brandName}>ClauseCheck</Text>
           <Text style={styles.brandTag}>ANÁLISE INTELIGENTE DE CONTRATOS</Text>
         </Animated.View>
 
-        {/* Form */}
-        <Animated.View entering={FadeInDown.duration(700).delay(240)}>
+        <Animated.View style={form}>
           <View style={styles.divider} />
 
           <Text style={styles.fieldLabel}>E-MAIL</Text>
@@ -152,13 +147,11 @@ export function LoginScreen({ navigation }: Props) {
           />
 
           {error !== '' && <Text style={styles.errorText}>{error}</Text>}
-
           <View style={styles.divider} />
         </Animated.View>
 
-        {/* Actions */}
-        <Animated.View entering={FadeInDown.duration(700).delay(400)}>
-          <Animated.View style={btnStyle}>
+        <Animated.View style={actions}>
+          <Animated.View style={{ transform: [{ scale: btnScale }] }}>
             <TouchableOpacity
               style={[styles.button, loading && { opacity: 0.65 }]}
               onPress={handleAuth}
@@ -196,54 +189,25 @@ const styles = StyleSheet.create({
     top: -height * 0.12,
     justifyContent: 'center',
   },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
+  inner:        { flex: 1, justifyContent: 'center', paddingHorizontal: 32 },
   brandBlock:   { alignItems: 'center', marginBottom: 44 },
   brandIcon:    { fontFamily: 'Georgia', fontSize: 56, color: C.gold, marginBottom: 12 },
   brandName:    { fontFamily: 'Georgia', fontSize: 32, color: C.text1, letterSpacing: 0.5, marginBottom: 8 },
   brandTag:     { fontFamily: F.mono, fontSize: 9, color: C.goldDim, letterSpacing: 3, textAlign: 'center' },
   divider:      { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginVertical: 26 },
-  fieldLabel: {
-    fontFamily: F.mono,
-    fontSize: 9,
-    color: C.text3,
-    letterSpacing: 2,
-    marginBottom: 10,
-  },
+  fieldLabel:   { fontFamily: F.mono, fontSize: 9, color: C.text3, letterSpacing: 2, marginBottom: 10 },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    paddingVertical: 10,
-    fontSize: 16,
-    fontFamily: F.body,
-    color: C.text1,
+    borderBottomWidth: 1, borderBottomColor: C.border,
+    paddingVertical: 10, fontSize: 16, fontFamily: F.body, color: C.text1,
   },
   inputFocused: { borderBottomColor: C.gold },
-  errorText: {
-    fontFamily: F.body,
-    color: C.danger,
-    fontSize: 13,
-    marginTop: 14,
-    textAlign: 'center',
-  },
+  errorText:    { fontFamily: F.body, color: C.danger, fontSize: 13, marginTop: 14, textAlign: 'center' },
   button: {
-    backgroundColor: C.gold,
-    borderRadius: 4,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: C.gold, borderRadius: 4,
+    paddingVertical: 16, alignItems: 'center', marginBottom: 20,
   },
-  buttonText: {
-    fontFamily: F.body,
-    color: C.bg,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 3,
-  },
-  toggleRow:  { alignItems: 'center' },
-  toggleText: { fontFamily: F.body, color: C.text2, fontSize: 13 },
-  toggleLink: { color: C.gold },
+  buttonText:   { fontFamily: F.body, color: C.bg, fontSize: 12, fontWeight: '700', letterSpacing: 3 },
+  toggleRow:    { alignItems: 'center' },
+  toggleText:   { fontFamily: F.body, color: C.text2, fontSize: 13 },
+  toggleLink:   { color: C.gold },
 });
