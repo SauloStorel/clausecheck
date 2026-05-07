@@ -44,6 +44,7 @@ export function HomeScreen({ navigation }: Props) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const header = useEntrance(60);
+  const empty  = useEntrance(100);
 
   useFocusEffect(
     useCallback(() => { fetchAnalyses(); }, [])
@@ -99,7 +100,7 @@ export function HomeScreen({ navigation }: Props) {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Animated.View style={[styles.empty, useEntrance(100)]}>
+            <Animated.View style={[styles.empty, empty]}>
               <Text style={styles.emptyGlyph}>§</Text>
               <Text style={styles.emptyTitle}>Nenhum contrato ainda</Text>
               <Text style={styles.emptySubtext}>Toque em "Nova Análise" para começar.</Text>
