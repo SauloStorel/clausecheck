@@ -3,7 +3,6 @@ import {
   View, Text, TouchableOpacity, Animated,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
-import { animate } from 'animejs';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
@@ -37,11 +36,14 @@ export function RelatorioScreen({ navigation, route }: Props) {
       setAnalysis(data);
       if (data?.report?.clauses?.length) {
         const total = data.report.clauses.length;
-        const obj = { val: 0 };
-        animate(obj, {
-          val: total, duration: 900, ease: 'outExpo',
-          onUpdate: () => setClauseCount(Math.round(obj.val)),
-        });
+        const steps = 20;
+        const interval = 900 / steps;
+        let step = 0;
+        const timer = setInterval(() => {
+          step++;
+          setClauseCount(Math.round((step / steps) * total));
+          if (step >= steps) clearInterval(timer);
+        }, interval);
       }
     } catch {
       Alert.alert('Erro', 'Não foi possível carregar o relatório.');
