@@ -1,30 +1,46 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { ANALYSIS_SYSTEM_PROMPT, chatSystemPrompt } from '../constants/prompts';
 import { Report, Message } from '../types';
 
-const client = new Anthropic({
-  apiKey: process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
-  dangerouslyAllowBrowser: true,
-});
+const API_URL = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-6';
+
+async function callClaude(body: object): Promise<string> {
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Erro na API Anthropic: ${response.status} ${error}`);
+  }
+
+  const data = await response.json();
+  const content = data.content?.[0];
+  if (content?.type !== 'text') throw new Error('Resposta inesperada da IA');
+  return content.text;
+}
 
 export async function analyzeContractText(text: string): Promise<Report> {
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  const responseText = await callClaude({
+    model: MODEL,
     max_tokens: 2048,
     system: ANALYSIS_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: `Analise este contrato:\n\n${text}` }],
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') throw new Error('Resposta inesperada da IA');
-
-  const cleaned = content.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   return JSON.parse(cleaned) as Report;
 }
 
 export async function analyzeContractImage(base64Image: string): Promise<Report> {
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  const responseText = await callClaude({
+    model: MODEL,
     max_tokens: 2048,
     system: ANALYSIS_SYSTEM_PROMPT,
     messages: [{
@@ -39,10 +55,7 @@ export async function analyzeContractImage(base64Image: string): Promise<Report>
     }],
   });
 
-  const content = response.content[0];
-  if (content.type !== 'text') throw new Error('Resposta inesperada da IA');
-
-  const cleaned = content.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   return JSON.parse(cleaned) as Report;
 }
 
@@ -56,14 +69,10 @@ export async function sendChatMessage(
     { role: 'user' as const, content: userMessage },
   ];
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  return callClaude({
+    model: MODEL,
     max_tokens: 1024,
     system: chatSystemPrompt(contractText),
     messages,
   });
-
-  const content = response.content[0];
-  if (content.type !== 'text') throw new Error('Resposta inesperada da IA');
-  return content.text;
 }

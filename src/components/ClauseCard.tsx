@@ -1,18 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Clause, RiskLevel } from '../types';
-
-const borderColor: Record<RiskLevel, string> = {
-  high:   '#dc2626',
-  medium: '#d97706',
-  low:    '#16a34a',
-};
-
-const bgColor: Record<RiskLevel, string> = {
-  high:   '#1f0a0a',
-  medium: '#1c1500',
-  low:    '#0a1f0a',
-};
+import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation } from 'react-native';
+import { Clause } from '../types';
+import { C, F, riskColors } from '../constants/theme';
 
 interface Props {
   clause: Clause;
@@ -20,26 +9,29 @@ interface Props {
 
 export function ClauseCard({ clause }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const { fg, bg, border } = riskColors[clause.risk];
+
+  function toggle() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(prev => !prev);
+  }
 
   return (
     <TouchableOpacity
-      onPress={() => setExpanded(prev => !prev)}
-      style={[
-        styles.card,
-        {
-          borderLeftColor: borderColor[clause.risk],
-          backgroundColor: bgColor[clause.risk],
-        },
-      ]}
-      activeOpacity={0.8}
+      onPress={toggle}
+      style={[styles.card, { borderLeftColor: fg, backgroundColor: bg, borderColor: border }]}
+      activeOpacity={0.75}
     >
       <View style={styles.header}>
-        <Text style={styles.id}>{clause.id}</Text>
-        <Text style={styles.arrow}>{expanded ? '▲' : '▼'}</Text>
+        <Text style={[styles.id, { color: fg }]}>{clause.id}</Text>
+        <Text style={[styles.chevron, { color: fg }]}>{expanded ? '▲' : '▼'}</Text>
       </View>
       <Text style={styles.title}>{clause.title}</Text>
       {expanded && (
-        <Text style={styles.explanation}>{clause.explanation}</Text>
+        <View style={styles.expandedContent}>
+          <View style={[styles.explanationDivider, { backgroundColor: border }]} />
+          <Text style={styles.explanation}>{clause.explanation}</Text>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -47,35 +39,42 @@ export function ClauseCard({ clause }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    borderLeftWidth: 4,
-    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderWidth: 1,
+    borderRadius: 4,
     padding: 14,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 5,
   },
   id: {
-    color: '#9ca3af',
-    fontSize: 11,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontFamily: F.mono,
+    fontSize: 10,
+    letterSpacing: 1.5,
   },
-  arrow: {
-    color: '#6b7280',
-    fontSize: 11,
+  chevron: {
+    fontFamily: F.mono,
+    fontSize: 9,
   },
   title: {
-    color: '#f3f4f6',
+    fontFamily: F.body,
+    color: C.text1,
     fontSize: 14,
     fontWeight: '600',
+    lineHeight: 20,
+  },
+  expandedContent: { marginTop: 10 },
+  explanationDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginBottom: 10,
   },
   explanation: {
-    color: '#d1d5db',
+    fontFamily: F.body,
+    color: C.text2,
     fontSize: 13,
     lineHeight: 20,
-    marginTop: 8,
   },
 });
