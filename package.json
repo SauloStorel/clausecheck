@@ -13,7 +13,6 @@
     "@react-navigation/native": "^7.2.2",
     "@react-navigation/stack": "^7.8.11",
     "@supabase/supabase-js": "^2.105.3",
-    "@types/react": "~19.2.10",
     "babel-preset-expo": "~55.0.8",
     "expo": "^55.0.23",
     "expo-document-picker": "~55.0.13",
@@ -35,7 +34,7 @@
     "react-native-webview": "13.16.0"
   },
   "devDependencies": {
-    "@types/react": "~19.1.0",
+    "@types/react": "~19.2.10",
     "typescript": "~5.9.2"
   },
   "overrides": {
