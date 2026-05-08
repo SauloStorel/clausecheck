@@ -3,9 +3,6 @@ import { Report, Message } from '../types';
 
 export type ProgressCallback = (pct: number, step: string) => void;
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-
 function parseAndValidateReport(data: unknown): Report {
   const r = data as Record<string, unknown>;
   if (!r || typeof r !== 'object') throw new Error('Resposta da IA inválida.');
@@ -20,79 +17,24 @@ function parseAndValidateReport(data: unknown): Report {
   return data as Report;
 }
 
-function analyzeViaXHR(
-  mode: string,
-  payload: unknown,
-  token: string,
-  onProgress?: ProgressCallback,
-): Promise<Report> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${SUPABASE_URL}/functions/v1/analyze-contract`);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    xhr.setRequestHeader('apikey', SUPABASE_KEY);
-    xhr.timeout = 120_000;
+// Progresso simulado com easing: rápido no início, desacelera perto do fim.
+// Nunca ultrapassa 88% — os últimos % só chegam com a resposta real.
+const STEPS: { ms: number; pct: number; step: string }[] = [
+  { ms: 0,      pct: 12, step: 'Lendo o contrato…'          },
+  { ms: 1200,   pct: 28, step: 'Identificando cláusulas…'   },
+  { ms: 3500,   pct: 44, step: 'Avaliando riscos jurídicos…' },
+  { ms: 7000,   pct: 60, step: 'Verificando base legal…'    },
+  { ms: 13000,  pct: 72, step: 'Verificando base legal…'    },
+  { ms: 21000,  pct: 81, step: 'Preparando o relatório…'    },
+  { ms: 33000,  pct: 87, step: 'Preparando o relatório…'    },
+  { ms: 50000,  pct: 88, step: 'Preparando o relatório…'    },
+];
 
-    let cursor = 0;
-    let lineBuffer = '';
-    let settled = false;
-
-    function handleLine(line: string) {
-      if (!line.startsWith('data: ')) return;
-      let event: { type: string; pct?: number; step?: string; report?: unknown; message?: string };
-      try { event = JSON.parse(line.slice(6)); } catch { return; }
-
-      if (event.type === 'progress' && event.pct != null) {
-        onProgress?.(event.pct, event.step ?? '');
-      } else if (event.type === 'result' && !settled) {
-        settled = true;
-        try { resolve(parseAndValidateReport(event.report)); } catch (e) { reject(e); }
-      } else if (event.type === 'error' && !settled) {
-        settled = true;
-        reject(new Error(event.message ?? 'Erro na análise.'));
-      }
-    }
-
-    function processChunk() {
-      const newText = xhr.responseText.slice(cursor);
-      cursor = xhr.responseText.length;
-      if (!newText) return;
-
-      // Acumula no buffer e processa apenas linhas completas (terminadas em \n)
-      lineBuffer += newText;
-      const lines = lineBuffer.split('\n');
-      // Última entrada pode estar incompleta — guarda no buffer
-      lineBuffer = lines.pop() ?? '';
-      for (const line of lines) handleLine(line.trimEnd());
-    }
-
-    xhr.onreadystatechange = () => {
-      // readyState 3 = LOADING (chunks em tempo real, suportado em alguns RN builds)
-      // readyState 4 = DONE (sempre suportado — fallback garante que funciona de qualquer forma)
-      if (xhr.readyState >= 3) processChunk();
-
-      if (xhr.readyState === 4) {
-        // Processar o que sobrou no buffer (última linha sem \n)
-        if (lineBuffer) { handleLine(lineBuffer.trimEnd()); lineBuffer = ''; }
-
-        if (!settled) {
-          settled = true;
-          try {
-            const body = JSON.parse(xhr.responseText);
-            reject(new Error(body.error ?? 'Análise encerrada sem resultado.'));
-          } catch {
-            reject(new Error(`Análise encerrada sem resultado. Status HTTP: ${xhr.status}`));
-          }
-        }
-      }
-    };
-
-    xhr.onerror   = () => { if (!settled) { settled = true; reject(new Error('Erro de rede.')); } };
-    xhr.ontimeout = () => { if (!settled) { settled = true; reject(new Error('Tempo esgotado (>2min).')); } };
-
-    xhr.send(JSON.stringify({ mode, payload }));
-  });
+function startProgress(onProgress: ProgressCallback): () => void {
+  const ids = STEPS.map(({ ms, pct, step }) =>
+    setTimeout(() => onProgress(pct, step), ms)
+  );
+  return () => ids.forEach(clearTimeout);
 }
 
 async function analyzeWithProgress(
@@ -100,9 +42,18 @@ async function analyzeWithProgress(
   payload: unknown,
   onProgress?: ProgressCallback,
 ): Promise<Report> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Usuário não autenticado.');
-  return analyzeViaXHR(mode, payload, session.access_token, onProgress);
+  const stop = onProgress ? startProgress(onProgress) : undefined;
+  try {
+    const { data, error } = await supabase.functions.invoke('analyze-contract', {
+      body: { mode, payload },
+    });
+    if (error) throw new Error(error.message ?? 'Erro na análise.');
+    if (data?.error) throw new Error(data.error);
+    onProgress?.(96, 'Finalizando…');
+    return parseAndValidateReport(data.report);
+  } finally {
+    stop?.();
+  }
 }
 
 export async function analyzeContractText(text: string, onProgress?: ProgressCallback): Promise<Report> {
