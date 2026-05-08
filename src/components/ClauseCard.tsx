@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, LayoutAnimation, Animated, Easing } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Clause } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
@@ -17,6 +18,13 @@ export function ClauseCard({ clause, isLast }: Props) {
   const { fg } = riskColors[clause.risk];
 
   function toggle() {
+    if (clause.risk === 'high') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } else if (clause.risk === 'medium') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      Haptics.selectionAsync();
+    }
     LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
     Animated.timing(rotate, {
       toValue: expanded ? 0 : 1,

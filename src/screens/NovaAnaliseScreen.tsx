@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
+import * as Haptics from 'expo-haptics';
 import { analyzeContractText, analyzeContractImages, analyzeContractPDF } from '../services/claude';
 import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
@@ -224,6 +225,7 @@ export function NovaAnaliseScreen({ navigation }: Props) {
     if (modo === 'foto' && imagemUris.length === 0) { Alert.alert('Atenção', 'Selecione ou fotografe o contrato.'); return; }
     if (modo === 'pdf' && !pdfBase64) { Alert.alert('Atenção', 'Selecione um arquivo PDF.'); return; }
     if (modo === 'texto' && texto.trim().length < 50) { Alert.alert('Atenção', 'Cole o texto (mínimo 50 caracteres).'); return; }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
       let report;
@@ -247,8 +249,10 @@ export function NovaAnaliseScreen({ navigation }: Props) {
         risk_level: report.risk_level,
       }).select().single();
       if (error) throw error;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.replace('Relatorio', { analysisId: data.id });
     } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Erro na análise', err.message ?? 'Tente novamente.');
     } finally {
       setLoading(false);

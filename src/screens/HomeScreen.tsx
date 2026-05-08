@@ -56,16 +56,33 @@ export function HomeScreen({ navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      fetchAnalyses();
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        setUserEmail(user?.email ?? '');
-      });
+      let cancelled = false;
+
+      async function load() {
+        setLoading(true);
+        try {
+          const [analysesRes, userRes] = await Promise.all([
+            supabase.from('analyses').select('*').order('created_at', { ascending: false }),
+            supabase.auth.getUser(),
+          ]);
+          if (cancelled) return;
+          if (analysesRes.error) throw analysesRes.error;
+          setAnalyses(analysesRes.data ?? []);
+          setUserEmail(userRes.data.user?.email ?? '');
+        } catch {
+          if (!cancelled) Alert.alert('Erro', 'Não foi possível carregar seus contratos.');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      }
+
+      load();
+      return () => { cancelled = true; };
     }, [])
   );
 
   async function fetchAnalyses(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
-    else setLoading(true);
     try {
       const { data, error } = await supabase
         .from('analyses').select('*').order('created_at', { ascending: false });
@@ -74,7 +91,6 @@ export function HomeScreen({ navigation }: Props) {
     } catch {
       Alert.alert('Erro', 'Não foi possível carregar seus contratos.');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }

@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '../services/supabase';
 import { SwipeableAnalysisItem } from '../components/SwipeableAnalysisItem';
 import { Analysis, RiskLevel, RootStackParamList } from '../types';
@@ -37,12 +38,33 @@ export function HistoricoScreen({ navigation }: Props) {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   useFocusEffect(
-    useCallback(() => { fetchAnalyses(); }, [])
+    useCallback(() => {
+      let cancelled = false;
+
+      async function load() {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('analyses')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (cancelled) return;
+          if (error) throw error;
+          setAnalyses(data ?? []);
+        } catch {
+          if (!cancelled) Alert.alert('Erro', 'Não foi possível carregar o histórico.');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      }
+
+      load();
+      return () => { cancelled = true; };
+    }, [])
   );
 
   async function fetchAnalyses(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
-    else setLoading(true);
     try {
       const { data, error } = await supabase
         .from('analyses')
@@ -53,7 +75,6 @@ export function HistoricoScreen({ navigation }: Props) {
     } catch {
       Alert.alert('Erro', 'Não foi possível carregar o histórico.');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }
@@ -109,7 +130,7 @@ export function HistoricoScreen({ navigation }: Props) {
             <TouchableOpacity
               key={f.key}
               style={[styles.chip, active && styles.chipActive]}
-              onPress={() => setRiskFilter(f.key)}
+              onPress={() => { Haptics.selectionAsync(); setRiskFilter(f.key); }}
               activeOpacity={0.7}
             >
               <Text style={[styles.chipText, active && styles.chipTextActive]}>

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import { useTheme } from '../context/ThemeContext';
@@ -48,13 +49,16 @@ export function LoginScreen({ navigation }: Props) {
       if (modo === 'login') {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password: senha });
         if (err) throw err;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         navigation.replace('Home');
       } else {
         const { error: err } = await supabase.auth.signUp({ email, password: senha });
         if (err) throw err;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setError('Verifique seu e-mail para confirmar o cadastro.');
       }
     } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setError(err.message ?? 'Tente novamente.');
     } finally {
       setLoading(false);
