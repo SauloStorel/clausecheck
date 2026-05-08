@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import * as Haptics from 'expo-haptics';
-import { analyzeContractText, analyzeContractImages, analyzeContractPDF } from '../services/claude';
+import { analyzeContractText, analyzeContractImages, analyzeContractPDF, ProgressCallback } from '../services/claude';
 import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
 import { RootStackParamList } from '../types';
@@ -36,39 +36,49 @@ const LEGAL_TIPS = [
   'Verifique se há cláusula de renovação automática e seu prazo de cancelamento.',
 ];
 
-function AnalysisLoadingOverlay({ visible, C }: { visible: boolean; C: any }) {
-  const [stepIndex, setStepIndex] = useState(0);
+type OverlayProps = {
+  visible: boolean;
+  C: any;
+  progressPct?: number;
+  progressStep?: string;
+};
+
+function AnalysisLoadingOverlay({ visible, C, progressPct = 0, progressStep = '' }: OverlayProps) {
   const [tipIndex, setTipIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const stepFade = useRef(new Animated.Value(1)).current;
   const tipFade = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const prevStep = useRef('');
+
+  // Anima a barra suavemente para o valor real recebido
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressPct / 100,
+      duration: 600,
+      useNativeDriver: false,
+    }).start();
+  }, [progressPct]);
+
+  // Fade no texto do passo quando mudar
+  useEffect(() => {
+    if (!progressStep || progressStep === prevStep.current) return;
+    prevStep.current = progressStep;
+    Animated.sequence([
+      Animated.timing(stepFade, { toValue: 0, duration: 180, useNativeDriver: true }),
+      Animated.timing(stepFade, { toValue: 1, duration: 180, useNativeDriver: true }),
+    ]).start();
+  }, [progressStep]);
 
   useEffect(() => {
     if (!visible) return;
-    setStepIndex(0);
     setTipIndex(0);
     progressAnim.setValue(0);
+    prevStep.current = '';
 
     Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
-    // Avança barra de progresso suavemente
-    Animated.timing(progressAnim, {
-      toValue: 0.9,
-      duration: LOADING_STEPS.length * 2200,
-      useNativeDriver: false,
-    }).start();
-
-    // Troca o passo atual a cada 2.2s
-    const stepInterval = setInterval(() => {
-      Animated.sequence([
-        Animated.timing(stepFade, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(stepFade, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]).start();
-      setStepIndex(i => (i + 1) % LOADING_STEPS.length);
-    }, 2200);
-
-    // Troca a dica jurídica a cada 4s (ritmo diferente)
+    // Dicas rotacionam independentemente da IA, a cada 4s
     const tipInterval = setInterval(() => {
       Animated.sequence([
         Animated.timing(tipFade, { toValue: 0, duration: 300, useNativeDriver: true }),
@@ -78,7 +88,6 @@ function AnalysisLoadingOverlay({ visible, C }: { visible: boolean; C: any }) {
     }, 4000);
 
     return () => {
-      clearInterval(stepInterval);
       clearInterval(tipInterval);
       fadeAnim.setValue(0);
       stepFade.setValue(1);
@@ -107,16 +116,16 @@ function AnalysisLoadingOverlay({ visible, C }: { visible: boolean; C: any }) {
             <Text style={[loadingStyles.title, { color: C.text1 }]}>Analisando contrato</Text>
           </View>
 
-          {/* Barra de progresso */}
+          {/* Barra de progresso real */}
           <View style={[loadingStyles.progressTrack, { backgroundColor: C.border }]}>
             <Animated.View
               style={[loadingStyles.progressFill, { backgroundColor: C.accent, width: progressWidth }]}
             />
           </View>
 
-          {/* Passo atual */}
+          {/* Passo atual com fade */}
           <Animated.Text style={[loadingStyles.step, { color: C.accent, opacity: stepFade }]}>
-            {LOADING_STEPS[stepIndex]}
+            {progressStep || 'Lendo o contrato…'}
           </Animated.Text>
 
           {/* Separador */}
@@ -231,6 +240,8 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   const [pdfBase64, setPdfBase64] = useState<string | null>(null);
   const [titulo, setTitulo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [analysisPct, setAnalysisPct] = useState(0);
+  const [analysisStep, setAnalysisStep] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   function abrirOpcoesFoto() {
@@ -316,17 +327,23 @@ export function NovaAnaliseScreen({ navigation }: Props) {
     if (modo === 'texto' && texto.trim().length < 50) { Alert.alert('Atenção', 'Cole o texto (mínimo 50 caracteres).'); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
+    setAnalysisPct(0);
+    setAnalysisStep('');
+    const onProgress: ProgressCallback = (pct, step) => {
+      setAnalysisPct(pct);
+      setAnalysisStep(step);
+    };
     try {
       let report;
       if (modo === 'foto' && imagemUris.length > 0) {
         const base64Images = await Promise.all(
           imagemUris.map(uri => FileSystem.readAsStringAsync(uri, { encoding: 'base64' }))
         );
-        report = await analyzeContractImages(base64Images);
+        report = await analyzeContractImages(base64Images, onProgress);
       } else if (modo === 'pdf' && pdfBase64) {
-        report = await analyzeContractPDF(pdfBase64);
+        report = await analyzeContractPDF(pdfBase64, onProgress);
       } else {
-        report = await analyzeContractText(texto);
+        report = await analyzeContractText(texto, onProgress);
       }
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase.from('analyses').insert({
@@ -350,7 +367,7 @@ export function NovaAnaliseScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: C.bg }]} edges={['bottom']}>
-      <AnalysisLoadingOverlay visible={loading} C={C} />
+      <AnalysisLoadingOverlay visible={loading} C={C} progressPct={analysisPct} progressStep={analysisStep} />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
