@@ -19,6 +19,17 @@ const RISK_STYLES: Record<Risk, {
 
 const RISK_ORDER: Risk[] = ['high', 'medium', 'low'];
 
+function extractImpact(explanation: string): string {
+  const match = explanation.match(/\(2\)\s*IMPACTO[:\s]+([^(]+)/i);
+  if (match) {
+    const text = match[1].trim().replace(/\s+/g, ' ');
+    return text.length > 140 ? text.slice(0, 137) + '…' : text;
+  }
+  const sentences = explanation.split(/(?<=[.!?])\s+/);
+  const second = sentences[1]?.trim();
+  return second ? (second.length > 140 ? second.slice(0, 137) + '…' : second) : '';
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -76,16 +87,15 @@ function buildWebViewHTML(analysis: Analysis): string {
 
   const clausesHTML = sortedClauses.map((clause, i) => {
     const s = RISK_STYLES[clause.risk];
+    const impact = extractImpact(clause.explanation);
     return `
-      <div style="border:1px solid ${s.border};border-radius:8px;margin-bottom:16px;overflow:hidden;">
+      <div style="border-left:4px solid ${s.color};border:1px solid ${s.border};border-left:4px solid ${s.color};border-radius:8px;margin-bottom:16px;overflow:hidden;">
         <div style="background-color:${s.bg};padding:12px 16px;border-bottom:1px solid ${s.border};">
           <table width="100%" style="border-collapse:collapse;"><tr>
             <td style="vertical-align:top;padding-right:10px;">
-              <div style="font-size:10px;font-weight:bold;color:#6B7280;letter-spacing:1px;margin-bottom:3px;">CLÁUSULA ${i + 1}</div>
+              <span style="display:inline-block;background-color:${s.color};color:#fff;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:4px;margin-bottom:6px;">${s.short}</span>
               <div style="font-size:15px;font-weight:bold;color:#111827;line-height:1.3;word-wrap:break-word;">${escapeHtml(clause.title)}</div>
-            </td>
-            <td style="vertical-align:top;text-align:right;white-space:nowrap;">
-              <span style="display:inline-block;background-color:${s.color};color:#fff;font-size:10px;font-weight:bold;padding:4px 10px;border-radius:4px;">${s.label}</span>
+              ${impact ? `<div style="font-size:12px;color:#374151;margin-top:5px;line-height:1.6;">${escapeHtml(impact)}</div>` : ''}
             </td>
           </tr></table>
         </div>
@@ -183,18 +193,13 @@ function buildPDFHTML(analysis: Analysis): string {
 
   const clausesHTML = sortedClauses.map((clause, i) => {
     const s = RISK_STYLES[clause.risk];
+    const impact = extractImpact(clause.explanation);
     return `
-      <div style="border:1px solid ${s.border};border-radius:6px;margin-bottom:14px;overflow:hidden;page-break-inside:avoid;">
+      <div style="border:1px solid ${s.border};border-left:4px solid ${s.color};border-radius:6px;margin-bottom:14px;overflow:hidden;page-break-inside:avoid;">
         <div style="background-color:${s.bg};padding:10px 14px;border-bottom:1px solid ${s.border};">
-          <table width="100%" style="border-collapse:collapse;"><tr>
-            <td style="vertical-align:middle;padding-right:10px;">
-              <div style="font-size:8px;font-weight:bold;color:#6B7280;letter-spacing:1.2px;margin-bottom:2px;">CLÁUSULA ${String(i + 1).padStart(2, '0')}</div>
-              <div style="font-size:13px;font-weight:bold;color:#111827;line-height:1.3;word-wrap:break-word;">${escapeHtml(clause.title)}</div>
-            </td>
-            <td style="vertical-align:middle;text-align:right;white-space:nowrap;">
-              <span style="display:inline-block;background-color:${s.color};color:#fff;font-size:9px;font-weight:bold;padding:4px 9px;border-radius:3px;letter-spacing:0.6px;">${s.label}</span>
-            </td>
-          </tr></table>
+          <span style="display:inline-block;background-color:${s.color};color:#fff;font-size:8.5px;font-weight:bold;padding:3px 8px;border-radius:3px;letter-spacing:0.6px;margin-bottom:5px;">${s.short}</span>
+          <div style="font-size:13px;font-weight:bold;color:#111827;line-height:1.3;word-wrap:break-word;">${escapeHtml(clause.title)}</div>
+          ${impact ? `<div style="font-size:11px;color:#374151;margin-top:4px;line-height:1.55;">${escapeHtml(impact)}</div>` : ''}
         </div>
         <div style="padding:12px 14px;background:#fff;">
           <p style="font-size:11.5px;color:#374151;line-height:1.75;margin:0;word-wrap:break-word;">${escapeMultiline(clause.explanation)}</p>

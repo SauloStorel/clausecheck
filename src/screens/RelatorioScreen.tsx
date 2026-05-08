@@ -8,9 +8,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 import { primeCache } from '../services/pdfCache';
-import { RiskBadge } from '../components/RiskBadge';
 import { ClauseCard } from '../components/ClauseCard';
-import { Analysis, RootStackParamList } from '../types';
+import { Analysis, RootStackParamList, RiskLevel } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
 
@@ -20,7 +19,7 @@ type Props = {
 };
 
 export function RelatorioScreen({ navigation, route }: Props) {
-  const { C } = useTheme();
+  const { C, riskColors } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
   const { analysisId } = route.params;
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
@@ -55,28 +54,72 @@ export function RelatorioScreen({ navigation, route }: Props) {
 
   const { report } = analysis;
 
+  const counts = useMemo(() => {
+    const c = { high: 0, medium: 0, low: 0 };
+    for (const clause of report.clauses) c[clause.risk]++;
+    return c;
+  }, [report]);
+
+  const verdictText = useMemo(() => {
+    if (counts.high > 0) {
+      return counts.high === 1
+        ? '1 cláusula crítica pode prejudicá-lo'
+        : `${counts.high} cláusulas críticas podem prejudicá-lo`;
+    }
+    if (counts.medium > 0) {
+      return counts.medium === 1
+        ? '1 cláusula merece sua atenção'
+        : `${counts.medium} cláusulas merecem atenção`;
+    }
+    return 'Contrato equilibrado, sem riscos críticos';
+  }, [counts]);
+
+  const RISK_COUNTERS: { risk: RiskLevel; label: string; icon: string }[] = [
+    { risk: 'high',   label: counts.high === 1   ? 'crítico'  : 'críticos',  icon: 'alert-circle' },
+    { risk: 'medium', label: counts.medium === 1 ? 'atenção'  : 'atenções',  icon: 'warning'      },
+    { risk: 'low',    label: counts.low === 1     ? 'normal'   : 'normais',   icon: 'checkmark-circle' },
+  ];
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <RiskBadge level={report.risk_level} />
+
+        {/* VEREDICTO */}
+        <View style={[styles.verdict, { backgroundColor: riskColors[report.risk_level].soft }]}>
+          <View style={styles.verdictTop}>
+            <Ionicons
+              name={report.risk_level === 'low' ? 'checkmark-circle' : report.risk_level === 'medium' ? 'warning' : 'alert-circle'}
+              size={32}
+              color={riskColors[report.risk_level].fg}
+            />
+            <View style={styles.verdictTexts}>
+              <Text style={[styles.verdictTitle, { color: riskColors[report.risk_level].fg }]}>
+                {report.risk_level === 'high' ? 'Alto risco' : report.risk_level === 'medium' ? 'Risco médio' : 'Baixo risco'}
+              </Text>
+              <Text style={[styles.verdictSubtitle, { color: C.text2 }]}>{verdictText}</Text>
+            </View>
+          </View>
+
+          {/* Contadores por nível */}
+          <View style={styles.counters}>
+            {RISK_COUNTERS.map(({ risk, label, icon }) => (
+              <View key={risk} style={[styles.counter, { opacity: counts[risk] === 0 ? 0.35 : 1 }]}>
+                <Ionicons name={icon as any} size={16} color={riskColors[risk].fg} />
+                <Text style={[styles.counterNum, { color: riskColors[risk].fg }]}>{counts[risk]}</Text>
+                <Text style={[styles.counterLabel, { color: C.text3 }]}>{label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Título + data */}
+        <View style={styles.titleBlock}>
           <Text style={styles.heroTitle} numberOfLines={3}>{analysis.title}</Text>
           <Text style={styles.heroDate}>
             {new Date(analysis.created_at).toLocaleDateString('pt-BR', {
               day: '2-digit', month: 'long', year: 'numeric',
             })}
           </Text>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{report.clauses.length}</Text>
-            <Text style={styles.statLabel}>cláusulas</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{report.recommendations.length}</Text>
-            <Text style={styles.statLabel}>recomendações</Text>
-          </View>
         </View>
 
         <Text style={styles.sectionLabel}>Resumo</Text>
@@ -147,41 +190,70 @@ function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTh
     container: { flex: 1, backgroundColor: C.bg },
     centered: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
     content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
-    hero: {
+
+    verdict: {
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 16,
+      gap: 16,
+    },
+    verdictTop: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    verdictTexts: {
+      flex: 1,
+      gap: 4,
+    },
+    verdictTitle: {
+      fontFamily: F.display,
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    verdictSubtitle: {
+      fontFamily: F.body,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    counters: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    counter: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: C.surface,
+      borderRadius: 8,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    counterNum: {
+      fontFamily: F.display,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    counterLabel: {
+      fontFamily: F.body,
+      fontSize: 11,
+      flexShrink: 1,
+    },
+    titleBlock: {
       paddingHorizontal: 4,
-      paddingTop: 8,
       paddingBottom: 20,
-      gap: 10,
+      gap: 6,
     },
     heroTitle: {
       fontFamily: F.display,
-      fontSize: 26,
+      fontSize: 22,
       fontWeight: '700',
       color: C.text1,
-      letterSpacing: -0.4,
-      lineHeight: 32,
+      letterSpacing: -0.3,
+      lineHeight: 28,
     },
     heroDate: {
-      fontFamily: F.body,
-      fontSize: 14,
-      color: C.text3,
-    },
-    statsRow: {
-      flexDirection: 'row',
-      backgroundColor: C.surface,
-      borderRadius: 12,
-      paddingVertical: 14,
-      marginBottom: 28,
-    },
-    statBox: { flex: 1, alignItems: 'center' },
-    statNumber: {
-      fontFamily: F.display,
-      fontSize: 22,
-      fontWeight: '600',
-      color: C.text1,
-      marginBottom: 2,
-    },
-    statLabel: {
       fontFamily: F.body,
       fontSize: 13,
       color: C.text3,
