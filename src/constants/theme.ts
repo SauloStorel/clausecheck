@@ -1,41 +1,46 @@
 import { Platform } from 'react-native';
 
+// iOS-native refined palette: light mode, system grays, single indigo accent.
 export const C = {
-  bg:             '#08090D',
-  surface:        '#0D1119',
-  surfaceRaised:  '#131B27',
-  border:         '#182030',
-  borderActive:   '#2D4060',
+  bg:             '#F5F5F7',   // iOS grouped table bg
+  surface:        '#FFFFFF',
+  surfaceRaised:  '#FFFFFF',
+  border:         '#E5E5EA',   // systemGray5
+  borderStrong:   '#D1D1D6',   // systemGray4
+  separator:      '#C6C6C8',   // iOS hairline separator
 
-  gold:           '#C8A44A',
-  goldLight:      '#E2BC6A',
-  goldDim:        '#6A5520',
+  accent:         '#4F46E5',   // indigo-600
+  accentSoft:     '#EEF0FF',
+  accentDim:      '#7E7AE6',
 
-  danger:         '#C43838',
-  dangerBg:       '#160808',
-  dangerBorder:   '#5A1818',
+  danger:         '#D63B36',
+  dangerSoft:     '#FDECEC',
+  warning:        '#C77A0A',
+  warningSoft:    '#FBF1E2',
+  success:        '#137333',
+  successSoft:    '#E6F4EA',
 
-  warning:        '#C47820',
-  warningBg:      '#160E04',
-  warningBorder:  '#5A3810',
-
-  success:        '#389658',
-  successBg:      '#051408',
-  successBorder:  '#1A5028',
-
-  text1:          '#EBF0F5',
-  text2:          '#7A8599',
-  text3:          '#3C4555',
+  text1:          '#0A0A0F',
+  text2:          '#3C3C43',   // iOS label secondary
+  text3:          '#8E8E93',   // systemGray
+  text4:          '#C7C7CC',   // systemGray2
+  textInverse:    '#FFFFFF',
 };
 
 export const F = {
-  display: Platform.select({ ios: 'Georgia', android: 'serif' }) as string,
-  body:    Platform.select({ ios: 'System',  android: 'sans-serif' }) as string,
-  mono:    Platform.select({ ios: 'Courier New', android: 'monospace' }) as string,
+  // System font stack: SF Pro on iOS, Roboto on Android. No more serif/mono mix.
+  body:    Platform.select({ ios: 'System', android: 'sans-serif' }) as string,
+  display: Platform.select({ ios: 'System', android: 'sans-serif' }) as string,
 };
 
 export const riskColors = {
-  high:   { fg: C.danger,  bg: C.dangerBg,  border: C.dangerBorder },
-  medium: { fg: C.warning, bg: C.warningBg, border: C.warningBorder },
-  low:    { fg: C.success, bg: C.successBg, border: C.successBorder },
+  high:   { fg: C.danger,  soft: C.dangerSoft  },
+  medium: { fg: C.warning, soft: C.warningSoft },
+  low:    { fg: C.success, soft: C.successSoft },
+};
+
+export const riskLabels: Record<'high'|'medium'|'low', string> = {
+  high:   'Alto risco',
+  medium: 'Atenção',
+  low:    'Aprovado',
 };

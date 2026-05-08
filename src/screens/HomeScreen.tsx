@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, Animated, Easing,
+  StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -10,41 +10,14 @@ import { supabase } from '../services/supabase';
 import { AnalysisItem } from '../components/AnalysisItem';
 import { Analysis, RootStackParamList } from '../types';
 import { C, F } from '../constants/theme';
-import { useEntrance } from '../hooks/useEntrance';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 };
 
-function AnimatedItem({ children, index }: { children: React.ReactNode; index: number }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(14)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1, duration: 350, delay: index * 70, useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-      Animated.timing(translateY, {
-        toValue: 0, duration: 350, delay: index * 70, useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
-      {children}
-    </Animated.View>
-  );
-}
-
 export function HomeScreen({ navigation }: Props) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
-  const header = useEntrance(60);
-  const empty  = useEntrance(100);
 
   useFocusEffect(
     useCallback(() => { fetchAnalyses(); }, [])
@@ -70,77 +43,157 @@ export function HomeScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View style={[styles.header, header]}>
-        <View>
-          <Text style={styles.title}>Contratos</Text>
-          <Text style={styles.subtitle}>{analyses.length} analisado{analyses.length !== 1 ? 's' : ''}</Text>
-        </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.navbar}>
+        <TouchableOpacity onPress={handleLogout} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <Text style={styles.navAction}>Sair</Text>
+        </TouchableOpacity>
         <TouchableOpacity
-          onPress={handleLogout}
-          style={styles.logoutBtn}
-          accessibilityLabel="Sair da conta"
-          accessibilityRole="button"
+          onPress={() => navigation.navigate('NovaAnalise')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Text style={styles.logoutText}>SAIR</Text>
+          <Text style={[styles.navAction, styles.navActionPrimary]}>＋</Text>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
 
-      <View style={styles.divider} />
+      <View style={styles.titleBlock}>
+        <Text style={styles.title}>Contratos</Text>
+        {!loading && analyses.length > 0 && (
+          <Text style={styles.subtitle}>
+            {analyses.length} {analyses.length === 1 ? 'análise' : 'análises'}
+          </Text>
+        )}
+      </View>
 
       {loading ? (
-        <ActivityIndicator color={C.gold} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={C.accent} style={{ marginTop: 60 }} />
+      ) : analyses.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyTitle}>Nenhum contrato analisado</Text>
+          <Text style={styles.emptySubtext}>
+            Toque em ＋ para adicionar seu primeiro contrato.
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyCta}
+            onPress={() => navigation.navigate('NovaAnalise')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.emptyCtaText}>Nova análise</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={analyses}
           keyExtractor={item => item.id}
           renderItem={({ item, index }) => (
-            <AnimatedItem index={index}>
+            <View style={[
+              index === 0 && styles.firstRow,
+              index === analyses.length - 1 && styles.lastRow,
+              styles.rowWrap,
+            ]}>
               <AnalysisItem
                 analysis={item}
+                isLast={index === analyses.length - 1}
                 onPress={() => navigation.navigate('Relatorio', { analysisId: item.id })}
               />
-            </AnimatedItem>
+            </View>
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Animated.View style={[styles.empty, empty]}>
-              <Text style={styles.emptyGlyph}>§</Text>
-              <Text style={styles.emptyTitle}>Nenhum contrato ainda</Text>
-              <Text style={styles.emptySubtext}>Toque em "Nova Análise" para começar.</Text>
-            </Animated.View>
-          }
+          style={styles.listWrapper}
         />
       )}
-
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('NovaAnalise')} activeOpacity={0.85}>
-        <Text style={styles.fabText}>+ NOVA ANÁLISE</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
-    paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16,
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 4,
+    minHeight: 44,
   },
-  title:       { fontFamily: 'Georgia', fontSize: 28, color: C.text1, letterSpacing: 0.5 },
-  subtitle:    { fontFamily: F.mono, fontSize: 11, color: C.text3, letterSpacing: 1, marginTop: 2 },
-  logoutBtn:   { paddingBottom: 4 },
-  logoutText:  { fontFamily: F.mono, fontSize: 10, color: C.text3, letterSpacing: 2 },
-  divider:     { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginHorizontal: 24 },
-  list:        { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
-  empty:       { alignItems: 'center', marginTop: 80, paddingHorizontal: 40 },
-  emptyGlyph:  { fontFamily: 'Georgia', fontSize: 56, color: C.goldDim, marginBottom: 16 },
-  emptyTitle:  { fontFamily: 'Georgia', fontSize: 20, color: C.text2, marginBottom: 8 },
-  emptySubtext:{ fontFamily: F.body, fontSize: 13, color: C.text3, textAlign: 'center', lineHeight: 20 },
-  fab: {
-    position: 'absolute', bottom: 32, left: 24, right: 24,
-    backgroundColor: C.gold, borderRadius: 4, paddingVertical: 17, alignItems: 'center',
+  navAction: {
+    fontFamily: F.body,
+    fontSize: 16,
+    color: C.accent,
   },
-  fabText: { fontFamily: F.body, color: C.bg, fontSize: 12, fontWeight: '700', letterSpacing: 3 },
+  navActionPrimary: {
+    fontSize: 26,
+    fontWeight: '300',
+    marginTop: -4,
+  },
+  titleBlock: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 12,
+  },
+  title: {
+    fontFamily: F.display,
+    fontSize: 34,
+    fontWeight: '700',
+    color: C.text1,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontFamily: F.body,
+    fontSize: 15,
+    color: C.text3,
+    marginTop: 2,
+  },
+  listWrapper: { flex: 1 },
+  list: {
+    paddingTop: 8,
+    paddingBottom: 40,
+    paddingHorizontal: 16,
+  },
+  rowWrap: {
+    backgroundColor: C.surface,
+    overflow: 'hidden',
+  },
+  firstRow: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  lastRow: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  empty: {
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 80,
+  },
+  emptyTitle: {
+    fontFamily: F.display,
+    fontSize: 19,
+    fontWeight: '600',
+    color: C.text1,
+    marginBottom: 6,
+  },
+  emptySubtext: {
+    fontFamily: F.body,
+    fontSize: 15,
+    color: C.text3,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 28,
+  },
+  emptyCta: {
+    backgroundColor: C.accent,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: 10,
+  },
+  emptyCtaText: {
+    fontFamily: F.body,
+    color: C.textInverse,
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Animated,
+  StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -23,7 +23,6 @@ export function ChatScreen({ route }: Props) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [focused, setFocused] = useState(false);
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => { loadData(); }, []);
@@ -80,8 +79,10 @@ export function ChatScreen({ route }: Props) {
   }, [messages]);
 
   if (loading) {
-    return <View style={styles.centered}><ActivityIndicator color={C.gold} size="large" /></View>;
+    return <View style={styles.centered}><ActivityIndicator color={C.accent} size="large" /></View>;
   }
+
+  const canSend = input.trim().length > 0 && !sending;
 
   return (
     <KeyboardAvoidingView
@@ -90,16 +91,11 @@ export function ChatScreen({ route }: Props) {
       keyboardVerticalOffset={90}
     >
       <View style={styles.subHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>§</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.aiName}>ClauseCheck IA</Text>
-          <Text style={styles.contractName} numberOfLines={1}>{analysis?.title}</Text>
-        </View>
+        <Text style={styles.contractTitle} numberOfLines={1}>
+          {analysis?.title}
+        </Text>
+        <Text style={styles.aiTag}>Conversando com a IA</Text>
       </View>
-
-      <View style={styles.divider} />
 
       <FlatList
         ref={listRef}
@@ -111,54 +107,104 @@ export function ChatScreen({ route }: Props) {
         showsVerticalScrollIndicator={false}
       />
 
-      <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
-        <TextInput
-          style={styles.input}
-          placeholder="Pergunte sobre o contrato..."
-          placeholderTextColor={C.text3}
-          value={input}
-          onChangeText={setInput}
-          multiline
-          maxLength={500}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]}
-          onPress={handleSend}
-          disabled={!input.trim() || sending}
-          activeOpacity={0.8}
-          accessibilityLabel="Enviar mensagem"
-          accessibilityRole="button"
-        >
-          {sending ? <ActivityIndicator color={C.bg} size="small" /> : <Text style={styles.sendIcon}>↑</Text>}
-        </TouchableOpacity>
+      <View style={styles.inputBar}>
+        <View style={styles.inputPill}>
+          <TextInput
+            style={styles.input}
+            placeholder="Pergunte sobre o contrato…"
+            placeholderTextColor={C.text3}
+            value={input}
+            onChangeText={setInput}
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity
+            style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
+            onPress={handleSend}
+            disabled={!canSend}
+            activeOpacity={0.8}
+            accessibilityLabel="Enviar mensagem"
+            accessibilityRole="button"
+          >
+            {sending
+              ? <ActivityIndicator color={C.textInverse} size="small" />
+              : <Text style={styles.sendIcon}>↑</Text>
+            }
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: C.bg },
-  centered:       { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
-  subHeader:      { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
-  avatar:         { width: 36, height: 36, borderRadius: 4, backgroundColor: C.goldDim, alignItems: 'center', justifyContent: 'center' },
-  avatarText:     { fontFamily: 'Georgia', fontSize: 18, color: C.gold },
-  aiName:         { fontFamily: F.body, fontSize: 14, color: C.text1, fontWeight: '600' },
-  contractName:   { fontFamily: F.mono, fontSize: 11, color: C.text3, maxWidth: 260, marginTop: 1 },
-  divider:        { height: StyleSheet.hairlineWidth, backgroundColor: C.border },
-  messageList:    { paddingVertical: 16, paddingBottom: 8 },
-  inputRow: {
-    flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16,
-    paddingVertical: 12, gap: 10, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg,
+  container: { flex: 1, backgroundColor: C.surface },
+  centered: { flex: 1, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center' },
+  subHeader: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
   },
-  inputRowFocused: { borderTopColor: C.goldDim },
+  contractTitle: {
+    fontFamily: F.body,
+    fontSize: 15,
+    color: C.text1,
+    fontWeight: '600',
+    maxWidth: 280,
+  },
+  aiTag: {
+    fontFamily: F.body,
+    fontSize: 12,
+    color: C.text3,
+    marginTop: 1,
+  },
+  messageList: {
+    paddingVertical: 12,
+    paddingBottom: 8,
+  },
+  inputBar: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: C.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.border,
+  },
+  inputPill: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: C.bg,
+    borderRadius: 22,
+    paddingLeft: 16,
+    paddingRight: 4,
+    paddingVertical: 4,
+    gap: 6,
+  },
   input: {
-    flex: 1, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border,
-    borderRadius: 4, paddingHorizontal: 14, paddingVertical: 10,
-    color: C.text1, fontFamily: F.body, fontSize: 14, maxHeight: 100,
+    flex: 1,
+    color: C.text1,
+    fontFamily: F.body,
+    fontSize: 15,
+    maxHeight: 110,
+    paddingVertical: 8,
+    paddingTop: 8,
   },
-  sendBtn:         { backgroundColor: C.gold, width: 44, height: 44, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  sendBtnDisabled: { opacity: 0.35 },
-  sendIcon:        { color: C.bg, fontSize: 18, fontWeight: '700' },
+  sendBtn: {
+    backgroundColor: C.accent,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  sendBtnDisabled: { backgroundColor: C.text4 },
+  sendIcon: {
+    color: C.textInverse,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: -2,
+  },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { Message } from '../types';
 import { C, F } from '../constants/theme';
 
@@ -10,15 +11,35 @@ interface Props {
 export function MessageBubble({ message }: Props) {
   const isAssistant = message.role === 'assistant';
 
+  const markdownStyles = {
+    body: {
+      color: isAssistant ? C.text1 : C.textInverse,
+      fontFamily: F.body,
+      fontSize: 15,
+      lineHeight: 21,
+    },
+    strong: {
+      fontWeight: 'bold' as const,
+      color: isAssistant ? C.text1 : C.textInverse,
+    },
+    em: {
+      fontStyle: 'italic' as const,
+      color: isAssistant ? C.text1 : C.textInverse,
+    },
+    text: {
+      color: isAssistant ? C.text1 : C.textInverse,
+      fontFamily: F.body,
+      fontSize: 15,
+      lineHeight: 21,
+    },
+  };
+
   return (
-    <View style={[styles.wrapper, isAssistant ? styles.wrapperLeft : styles.wrapperRight]}>
-      {isAssistant && (
-        <View style={styles.avatarDot} />
-      )}
+    <View style={[styles.wrapper, isAssistant ? styles.alignLeft : styles.alignRight]}>
       <View style={[styles.bubble, isAssistant ? styles.bubbleAssistant : styles.bubbleUser]}>
-        <Text style={[styles.text, isAssistant ? styles.textAssistant : styles.textUser]}>
+        <Markdown style={markdownStyles}>
           {message.content}
-        </Text>
+        </Markdown>
       </View>
     </View>
   );
@@ -26,43 +47,24 @@ export function MessageBubble({ message }: Props) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginVertical: 4,
-    marginHorizontal: 16,
+    marginVertical: 3,
+    marginHorizontal: 12,
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
   },
-  wrapperLeft:      { justifyContent: 'flex-start' },
-  wrapperRight:     { justifyContent: 'flex-end' },
-  avatarDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.goldDim,
-    marginBottom: 12,
-  },
+  alignLeft:  { justifyContent: 'flex-start' },
+  alignRight: { justifyContent: 'flex-end' },
   bubble: {
-    maxWidth: '80%',
-    borderRadius: 4,
+    maxWidth: '78%',
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
+    paddingVertical: 9,
+    borderRadius: 20,
   },
   bubbleAssistant: {
-    backgroundColor: C.surface,
-    borderColor: C.border,
-    borderBottomLeftRadius: 1,
+    backgroundColor: '#E9E9EB',
+    borderBottomLeftRadius: 6,
   },
   bubbleUser: {
-    backgroundColor: C.goldDim,
-    borderColor: C.gold,
-    borderBottomRightRadius: 1,
+    backgroundColor: C.accent,
+    borderBottomRightRadius: 6,
   },
-  text: {
-    fontFamily: F.body,
-    fontSize: 14,
-    lineHeight: 21,
-  },
-  textAssistant: { color: C.text2 },
-  textUser:      { color: C.goldLight },
 });
