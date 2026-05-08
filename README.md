@@ -84,8 +84,11 @@ Row Level Security ativado: cada usuário acessa apenas seus próprios dados.
 - Chave de API da [Anthropic](https://console.anthropic.com/) (Claude)
 
 ### 1. Clonar o repositório
+
+> **Importante:** clone usando HTTPS (não SSH) para evitar problemas de autenticação.
+
 ```bash
-git clone https://github.com/seu-usuario/clausecheck.git
+git clone https://github.com/SauloStorel/clausecheck.git
 cd clausecheck
 ```
 
