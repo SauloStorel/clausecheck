@@ -1,123 +1,60 @@
-import { ANALYSIS_SYSTEM_PROMPT, chatSystemPrompt } from '../constants/prompts';
+import { supabase } from './supabase';
 import { Report, Message } from '../types';
 
-const API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-6';
+function parseAndValidateReport(text: string): Report {
+  const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-async function callClaude(body: object): Promise<string> {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Erro na API Anthropic: ${response.status} ${error}`);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('A IA retornou um formato inválido. Tente novamente.');
   }
 
-  const data = await response.json();
-  const content = data.content?.[0];
-  if (content?.type !== 'text') throw new Error('Resposta inesperada da IA');
-  return content.text;
+  const r = parsed as Record<string, unknown>;
+
+  if (!r || typeof r !== 'object') throw new Error('Resposta da IA inválida.');
+  if (!['high', 'medium', 'low'].includes(r.risk_level as string))
+    throw new Error('Nível de risco inválido na resposta da IA.');
+  if (typeof r.summary !== 'string' || r.summary.trim() === '')
+    throw new Error('Resumo ausente na resposta da IA.');
+  if (!Array.isArray(r.clauses))
+    throw new Error('Lista de cláusulas inválida na resposta da IA.');
+  if (!Array.isArray(r.recommendations))
+    throw new Error('Recomendações inválidas na resposta da IA.');
+
+  return parsed as Report;
+}
+
+async function invokeEdgeFunction<T>(name: string, body: object): Promise<T> {
+  const { data, error } = await supabase.functions.invoke(name, { body });
+  if (error) throw new Error(error.message ?? 'Erro na função de análise.');
+  if (data?.error) throw new Error(data.error);
+  return data as T;
 }
 
 export async function analyzeContractText(text: string): Promise<Report> {
-  const responseText = await callClaude({
-    model: MODEL,
-    max_tokens: 4096,
-    system: ANALYSIS_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: `Analise este contrato:\n\n${text}` }],
+  const { report } = await invokeEdgeFunction<{ report: unknown }>('analyze-contract', {
+    mode: 'text',
+    payload: text,
   });
-
-  const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  return JSON.parse(cleaned) as Report;
-}
-
-export async function analyzeContractImage(base64Image: string): Promise<Report> {
-  const responseText = await callClaude({
-    model: MODEL,
-    max_tokens: 4096,
-    system: ANALYSIS_SYSTEM_PROMPT,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: 'image/jpeg', data: base64Image },
-        },
-        { type: 'text', text: 'Analise este contrato.' },
-      ],
-    }],
-  });
-
-  const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  return JSON.parse(cleaned) as Report;
-}
-
-export async function analyzeContractPDF(base64: string): Promise<Report> {
-  try {
-    console.log('Enviando PDF para análise...', { base64Length: base64.length });
-
-    const responseText = await callClaude({
-      model: MODEL,
-      max_tokens: 4096,
-      system: ANALYSIS_SYSTEM_PROMPT,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'document',
-            source: {
-              type: 'base64',
-              media_type: 'application/pdf',
-              data: base64,
-            },
-          },
-          { type: 'text', text: 'Analise este contrato.' },
-        ],
-      }],
-    });
-
-    console.log('Resposta da API (primeiros 200 chars):', responseText.substring(0, 200));
-
-    if (!responseText || responseText.trim().length === 0) {
-      throw new Error('API retornou resposta vazia');
-    }
-
-    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    console.log('JSON após limpeza (primeiros 200 chars):', cleaned.substring(0, 200));
-
-    return JSON.parse(cleaned) as Report;
-  } catch (err: any) {
-    console.error('Erro ao analisar PDF:', err);
-    throw err;
-  }
+  return parseAndValidateReport(JSON.stringify(report));
 }
 
 export async function analyzeContractImages(base64Images: string[]): Promise<Report> {
-  const imageContent = base64Images.map(data => ({
-    type: 'image' as const,
-    source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data },
-  }));
-  const responseText = await callClaude({
-    model: MODEL,
-    max_tokens: 4096,
-    system: ANALYSIS_SYSTEM_PROMPT,
-    messages: [{
-      role: 'user',
-      content: [
-        ...imageContent,
-        { type: 'text', text: base64Images.length > 1 ? `Analise este contrato. São ${base64Images.length} páginas fornecidas em ordem.` : 'Analise este contrato.' },
-      ],
-    }],
+  const { report } = await invokeEdgeFunction<{ report: unknown }>('analyze-contract', {
+    mode: 'images',
+    payload: base64Images,
   });
-  const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-  return JSON.parse(cleaned) as Report;
+  return parseAndValidateReport(JSON.stringify(report));
+}
+
+export async function analyzeContractPDF(base64: string): Promise<Report> {
+  const { report } = await invokeEdgeFunction<{ report: unknown }>('analyze-contract', {
+    mode: 'pdf',
+    payload: base64,
+  });
+  return parseAndValidateReport(JSON.stringify(report));
 }
 
 export async function sendChatMessage(
@@ -125,15 +62,10 @@ export async function sendChatMessage(
   history: Message[],
   userMessage: string,
 ): Promise<string> {
-  const messages = [
-    ...history.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user' as const, content: userMessage },
-  ];
-
-  return callClaude({
-    model: MODEL,
-    max_tokens: 1024,
-    system: chatSystemPrompt(contractText),
-    messages,
+  const { reply } = await invokeEdgeFunction<{ reply: string }>('chat-contract', {
+    contractText,
+    history,
+    userMessage,
   });
+  return reply;
 }

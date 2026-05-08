@@ -4,6 +4,7 @@ import {
   Alert, ActivityIndicator, ScrollView, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import { useTheme } from '../context/ThemeContext';
@@ -164,7 +165,10 @@ export function PerfilScreen({ navigation }: Props) {
             <Text style={styles.actionText}>Modo escuro</Text>
             <Switch
               value={isDark}
-              onValueChange={toggleTheme}
+              onValueChange={() => {
+                Haptics.selectionAsync();
+                toggleTheme();
+              }}
               trackColor={{ false: C.border, true: C.accent }}
               thumbColor={C.surface}
             />

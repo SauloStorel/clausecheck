@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Analysis } from '../types';
 import { useTheme } from '../context/ThemeContext';
@@ -22,6 +23,7 @@ export function SwipeableAnalysisItem({ analysis, isLast, onPress, onDelete }: P
       <TouchableOpacity
         style={[styles.deleteAction, { backgroundColor: C.danger }]}
         onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
           Alert.alert(
             'Excluir análise',
             'Deseja excluir esta análise? Essa ação não pode ser desfeita.',
@@ -34,7 +36,10 @@ export function SwipeableAnalysisItem({ analysis, isLast, onPress, onDelete }: P
               {
                 text: 'Excluir',
                 style: 'destructive',
-                onPress: () => onDelete(analysis.id),
+                onPress: () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                  onDelete(analysis.id);
+                },
               },
             ]
           );
@@ -52,6 +57,7 @@ export function SwipeableAnalysisItem({ analysis, isLast, onPress, onDelete }: P
       renderRightActions={renderRightActions}
       rightThreshold={60}
       overshootRight={false}
+      onSwipeableOpen={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
     >
       <AnalysisItem
         analysis={analysis}
