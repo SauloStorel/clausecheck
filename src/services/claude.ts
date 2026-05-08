@@ -99,6 +99,27 @@ export async function analyzeContractPDF(base64: string): Promise<Report> {
   }
 }
 
+export async function analyzeContractImages(base64Images: string[]): Promise<Report> {
+  const imageContent = base64Images.map(data => ({
+    type: 'image' as const,
+    source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data },
+  }));
+  const responseText = await callClaude({
+    model: MODEL,
+    max_tokens: 4096,
+    system: ANALYSIS_SYSTEM_PROMPT,
+    messages: [{
+      role: 'user',
+      content: [
+        ...imageContent,
+        { type: 'text', text: base64Images.length > 1 ? `Analise este contrato. São ${base64Images.length} páginas fornecidas em ordem.` : 'Analise este contrato.' },
+      ],
+    }],
+  });
+  const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  return JSON.parse(cleaned) as Report;
+}
+
 export async function sendChatMessage(
   contractText: string,
   history: Message[],

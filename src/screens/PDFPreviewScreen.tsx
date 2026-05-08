@@ -7,7 +7,7 @@ import { RouteProp } from '@react-navigation/native';
 import { getCachedHTML, getCachedAnalysis } from '../services/pdfCache';
 import { exportReportPDF, sharePDF } from '../services/pdf';
 import { RootStackParamList } from '../types';
-import { C } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'PDFPreview'>;
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export function PDFPreviewScreen({ navigation, route }: Props) {
+  const { C } = useTheme();
   const { analysisId } = route.params;
   const [sharing, setSharing] = useState(false);
 

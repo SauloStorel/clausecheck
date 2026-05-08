@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
@@ -11,7 +11,8 @@ import { primeCache } from '../services/pdfCache';
 import { RiskBadge } from '../components/RiskBadge';
 import { ClauseCard } from '../components/ClauseCard';
 import { Analysis, RootStackParamList } from '../types';
-import { C, F } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
+import { F } from '../constants/theme';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Relatorio'>;
@@ -19,6 +20,8 @@ type Props = {
 };
 
 export function RelatorioScreen({ navigation, route }: Props) {
+  const { C } = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { analysisId } = route.params;
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +58,6 @@ export function RelatorioScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Hero */}
         <View style={styles.hero}>
           <RiskBadge level={report.risk_level} />
           <Text style={styles.heroTitle} numberOfLines={3}>{analysis.title}</Text>
@@ -66,7 +68,6 @@ export function RelatorioScreen({ navigation, route }: Props) {
           </Text>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statNumber}>{report.clauses.length}</Text>
@@ -78,13 +79,11 @@ export function RelatorioScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        {/* Resumo */}
         <Text style={styles.sectionLabel}>Resumo</Text>
         <View style={[styles.card, { padding: 16 }]}>
           <Text style={styles.summaryText}>{report.summary}</Text>
         </View>
 
-        {/* Cláusulas */}
         <Text style={styles.sectionLabel}>Cláusulas analisadas</Text>
         <View style={styles.card}>
           {report.clauses.map((clause, i) => (
@@ -96,7 +95,6 @@ export function RelatorioScreen({ navigation, route }: Props) {
           ))}
         </View>
 
-        {/* Recomendações */}
         {report.recommendations.length > 0 && (
           <>
             <Text style={styles.sectionLabel}>Recomendações</Text>
@@ -144,144 +142,146 @@ export function RelatorioScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
-  centered: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
-  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
-  hero: {
-    paddingHorizontal: 4,
-    paddingTop: 8,
-    paddingBottom: 20,
-    gap: 10,
-  },
-  heroTitle: {
-    fontFamily: F.display,
-    fontSize: 26,
-    fontWeight: '700',
-    color: C.text1,
-    letterSpacing: -0.4,
-    lineHeight: 32,
-  },
-  heroDate: {
-    fontFamily: F.body,
-    fontSize: 14,
-    color: C.text3,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    backgroundColor: C.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: 28,
-  },
-  statBox: { flex: 1, alignItems: 'center' },
-  statNumber: {
-    fontFamily: F.display,
-    fontSize: 22,
-    fontWeight: '600',
-    color: C.text1,
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontFamily: F.body,
-    fontSize: 13,
-    color: C.text3,
-  },
-  sectionLabel: {
-    fontFamily: F.body,
-    fontSize: 13,
-    fontWeight: '600',
-    color: C.text3,
-    marginBottom: 8,
-    marginTop: 4,
-    paddingLeft: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  card: {
-    backgroundColor: C.surface,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  summaryText: {
-    fontFamily: F.body,
-    color: C.text1,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  recItem: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: 'flex-start',
-  },
-  recItemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: C.border,
-  },
-  recDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: C.accent,
-    marginTop: 9,
-  },
-  recText: {
-    flex: 1,
-    fontFamily: F.body,
-    color: C.text1,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  loadingText: {
-    fontFamily: F.body,
-    color: C.text3,
-    marginTop: 12,
-    fontSize: 15,
-  },
-  chatButtonWrap: {
-    position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
-    gap: 10,
-  },
-  exportButton: {
-    backgroundColor: C.surface,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: C.accent,
-  },
-  exportButtonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  exportButtonText: {
-    fontFamily: F.body,
-    color: C.accent,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  chatButton: {
-    backgroundColor: C.accent,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    shadowColor: C.accent,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  chatButtonText: {
-    fontFamily: F.body,
-    color: C.textInverse,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
+function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTheme>['C']) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.bg },
+    centered: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
+    content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
+    hero: {
+      paddingHorizontal: 4,
+      paddingTop: 8,
+      paddingBottom: 20,
+      gap: 10,
+    },
+    heroTitle: {
+      fontFamily: F.display,
+      fontSize: 26,
+      fontWeight: '700',
+      color: C.text1,
+      letterSpacing: -0.4,
+      lineHeight: 32,
+    },
+    heroDate: {
+      fontFamily: F.body,
+      fontSize: 14,
+      color: C.text3,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      backgroundColor: C.surface,
+      borderRadius: 12,
+      paddingVertical: 14,
+      marginBottom: 28,
+    },
+    statBox: { flex: 1, alignItems: 'center' },
+    statNumber: {
+      fontFamily: F.display,
+      fontSize: 22,
+      fontWeight: '600',
+      color: C.text1,
+      marginBottom: 2,
+    },
+    statLabel: {
+      fontFamily: F.body,
+      fontSize: 13,
+      color: C.text3,
+    },
+    sectionLabel: {
+      fontFamily: F.body,
+      fontSize: 13,
+      fontWeight: '600',
+      color: C.text3,
+      marginBottom: 8,
+      marginTop: 4,
+      paddingLeft: 4,
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
+    },
+    card: {
+      backgroundColor: C.surface,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginBottom: 24,
+    },
+    summaryText: {
+      fontFamily: F.body,
+      color: C.text1,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    recItem: {
+      flexDirection: 'row',
+      gap: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'flex-start',
+    },
+    recItemBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: C.border,
+    },
+    recDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      backgroundColor: C.accent,
+      marginTop: 9,
+    },
+    recText: {
+      flex: 1,
+      fontFamily: F.body,
+      color: C.text1,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    loadingText: {
+      fontFamily: F.body,
+      color: C.text3,
+      marginTop: 12,
+      fontSize: 15,
+    },
+    chatButtonWrap: {
+      position: 'absolute',
+      bottom: 24,
+      left: 16,
+      right: 16,
+      gap: 10,
+    },
+    exportButton: {
+      backgroundColor: C.surface,
+      borderRadius: 12,
+      paddingVertical: 15,
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: C.accent,
+    },
+    exportButtonInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 7,
+    },
+    exportButtonText: {
+      fontFamily: F.body,
+      color: C.accent,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    chatButton: {
+      backgroundColor: C.accent,
+      borderRadius: 12,
+      paddingVertical: 15,
+      alignItems: 'center',
+      shadowColor: C.accent,
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 4,
+    },
+    chatButtonText: {
+      fontFamily: F.body,
+      color: C.textInverse,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+  });
+}
