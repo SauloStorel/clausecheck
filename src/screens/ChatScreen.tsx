@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -9,7 +9,8 @@ import { supabase } from '../services/supabase';
 import { sendChatMessage } from '../services/claude';
 import { MessageBubble } from '../components/MessageBubble';
 import { Analysis, Message, RootStackParamList } from '../types';
-import { C, F } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
+import { F } from '../constants/theme';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Chat'>;
@@ -17,6 +18,8 @@ type Props = {
 };
 
 export function ChatScreen({ route }: Props) {
+  const { C } = useTheme();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { analysisId } = route.params;
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -137,74 +140,76 @@ export function ChatScreen({ route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.surface },
-  centered: { flex: 1, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center' },
-  subHeader: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 4,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: C.border,
-  },
-  contractTitle: {
-    fontFamily: F.body,
-    fontSize: 15,
-    color: C.text1,
-    fontWeight: '600',
-    maxWidth: 280,
-  },
-  aiTag: {
-    fontFamily: F.body,
-    fontSize: 12,
-    color: C.text3,
-    marginTop: 1,
-  },
-  messageList: {
-    paddingVertical: 12,
-    paddingBottom: 8,
-  },
-  inputBar: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: C.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: C.border,
-  },
-  inputPill: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: C.bg,
-    borderRadius: 22,
-    paddingLeft: 16,
-    paddingRight: 4,
-    paddingVertical: 4,
-    gap: 6,
-  },
-  input: {
-    flex: 1,
-    color: C.text1,
-    fontFamily: F.body,
-    fontSize: 15,
-    maxHeight: 110,
-    paddingVertical: 8,
-    paddingTop: 8,
-  },
-  sendBtn: {
-    backgroundColor: C.accent,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  sendBtnDisabled: { backgroundColor: C.text4 },
-  sendIcon: {
-    color: C.textInverse,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: -2,
-  },
-});
+function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTheme>['C']) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: C.surface },
+    centered: { flex: 1, backgroundColor: C.surface, justifyContent: 'center', alignItems: 'center' },
+    subHeader: {
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 4,
+      paddingBottom: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: C.border,
+    },
+    contractTitle: {
+      fontFamily: F.body,
+      fontSize: 15,
+      color: C.text1,
+      fontWeight: '600',
+      maxWidth: 280,
+    },
+    aiTag: {
+      fontFamily: F.body,
+      fontSize: 12,
+      color: C.text3,
+      marginTop: 1,
+    },
+    messageList: {
+      paddingVertical: 12,
+      paddingBottom: 8,
+    },
+    inputBar: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      backgroundColor: C.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: C.border,
+    },
+    inputPill: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      backgroundColor: C.bg,
+      borderRadius: 22,
+      paddingLeft: 16,
+      paddingRight: 4,
+      paddingVertical: 4,
+      gap: 6,
+    },
+    input: {
+      flex: 1,
+      color: C.text1,
+      fontFamily: F.body,
+      fontSize: 15,
+      maxHeight: 110,
+      paddingVertical: 8,
+      paddingTop: 8,
+    },
+    sendBtn: {
+      backgroundColor: C.accent,
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 2,
+    },
+    sendBtnDisabled: { backgroundColor: C.text4 },
+    sendIcon: {
+      color: C.textInverse,
+      fontSize: 18,
+      fontWeight: '700',
+      marginTop: -2,
+    },
+  });
+}

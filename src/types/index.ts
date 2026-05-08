@@ -36,8 +36,11 @@ export interface Message {
 }
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Login: undefined;
   Home: undefined;
+  Perfil: undefined;
+  Historico: undefined;
   NovaAnalise: undefined;
   Relatorio: { analysisId: string };
   PDFPreview: { analysisId: string };
