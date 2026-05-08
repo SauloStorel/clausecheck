@@ -1,31 +1,31 @@
 import { Platform } from 'react-native';
 
 export const C = {
-  bg:             '#08090D',
-  surface:        '#0D1119',
-  surfaceRaised:  '#131B27',
-  border:         '#182030',
-  borderActive:   '#2D4060',
+  bg:             '#0f0f0f',
+  surface:        '#1a1a1a',
+  surfaceRaised:  '#222222',
+  border:         '#2a2a2a',
+  borderActive:   '#4f46e5',
 
-  gold:           '#C8A44A',
-  goldLight:      '#E2BC6A',
-  goldDim:        '#6A5520',
+  gold:           '#4f46e5',
+  goldLight:      '#6366f1',
+  goldDim:        '#312e81',
 
-  danger:         '#C43838',
-  dangerBg:       '#160808',
-  dangerBorder:   '#5A1818',
+  danger:         '#ef4444',
+  dangerBg:       '#1a0000',
+  dangerBorder:   '#7f1d1d',
 
-  warning:        '#C47820',
-  warningBg:      '#160E04',
-  warningBorder:  '#5A3810',
+  warning:        '#f59e0b',
+  warningBg:      '#1a1000',
+  warningBorder:  '#78350f',
 
-  success:        '#389658',
-  successBg:      '#051408',
-  successBorder:  '#1A5028',
+  success:        '#22c55e',
+  successBg:      '#001a0a',
+  successBorder:  '#14532d',
 
-  text1:          '#EBF0F5',
-  text2:          '#7A8599',
-  text3:          '#3C4555',
+  text1:          '#f3f4f6',
+  text2:          '#9ca3af',
+  text3:          '#4b5563',
 };
 
 export const F = {
