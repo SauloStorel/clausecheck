@@ -26,6 +26,22 @@ export function RelatorioScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   useEffect(() => { fetchAnalysis(); }, []);
 
+  const report = analysis?.report ?? null;
+
+  const counts = useMemo(() => {
+    const c = { high: 0, medium: 0, low: 0 };
+    if (report) for (const clause of report.clauses) c[clause.risk]++;
+    return c;
+  }, [report]);
+
+  const verdictText = useMemo(() => {
+    if (counts.high > 0)
+      return counts.high === 1 ? '1 cláusula crítica pode prejudicá-lo' : `${counts.high} cláusulas críticas podem prejudicá-lo`;
+    if (counts.medium > 0)
+      return counts.medium === 1 ? '1 cláusula merece sua atenção' : `${counts.medium} cláusulas merecem atenção`;
+    return 'Contrato equilibrado, sem riscos críticos';
+  }, [counts]);
+
   async function fetchAnalysis() {
     try {
       const { data, error } = await supabase.from('analyses').select('*').eq('id', analysisId).single();
@@ -48,31 +64,9 @@ export function RelatorioScreen({ navigation, route }: Props) {
     );
   }
 
-  if (!analysis?.report) {
+  if (!report) {
     return <View style={styles.centered}><Text style={styles.loadingText}>Relatório não encontrado.</Text></View>;
   }
-
-  const { report } = analysis;
-
-  const counts = useMemo(() => {
-    const c = { high: 0, medium: 0, low: 0 };
-    for (const clause of report.clauses) c[clause.risk]++;
-    return c;
-  }, [report]);
-
-  const verdictText = useMemo(() => {
-    if (counts.high > 0) {
-      return counts.high === 1
-        ? '1 cláusula crítica pode prejudicá-lo'
-        : `${counts.high} cláusulas críticas podem prejudicá-lo`;
-    }
-    if (counts.medium > 0) {
-      return counts.medium === 1
-        ? '1 cláusula merece sua atenção'
-        : `${counts.medium} cláusulas merecem atenção`;
-    }
-    return 'Contrato equilibrado, sem riscos críticos';
-  }, [counts]);
 
   const RISK_COUNTERS: { risk: RiskLevel; label: string; icon: string }[] = [
     { risk: 'high',   label: counts.high === 1   ? 'crítico'  : 'críticos',  icon: 'alert-circle' },
