@@ -115,18 +115,26 @@ serve(async (req) => {
 
     const responseText = await callAnthropic({
       model: MODEL,
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: ANALYSIS_SYSTEM_PROMPT,
       messages,
     });
 
     const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const report = JSON.parse(cleaned);
+    let report;
+    try {
+      report = JSON.parse(cleaned);
+    } catch (parseErr: any) {
+      console.error('JSON parse error:', parseErr.message);
+      console.error('Response text:', responseText.substring(0, 200));
+      throw new Error(`Resposta inválida da IA: ${parseErr.message}`);
+    }
 
     return new Response(JSON.stringify({ report }), {
       headers: { ...CORS, 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
+    console.error('Error in analyze-contract:', err);
     return new Response(JSON.stringify({ error: err.message ?? 'Erro interno' }), {
       status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
     });
