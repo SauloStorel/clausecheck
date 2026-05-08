@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Markdown from 'react-native-markdown-display';
+import Markdown from '@ronradtke/react-native-markdown-display';
 import { Message } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
