@@ -5,6 +5,8 @@ export interface Clause {
   risk: RiskLevel;
   title: string;
   explanation: string;
+  affects_both_parties?: boolean;
+  severity_note?: string;
 }
 
 export interface Report {
@@ -38,5 +40,6 @@ export type RootStackParamList = {
   Home: undefined;
   NovaAnalise: undefined;
   Relatorio: { analysisId: string };
+  PDFPreview: { analysisId: string };
   Chat: { analysisId: string };
 };

@@ -29,7 +29,7 @@ async function callClaude(body: object): Promise<string> {
 export async function analyzeContractText(text: string): Promise<Report> {
   const responseText = await callClaude({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: 4096,
     system: ANALYSIS_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: `Analise este contrato:\n\n${text}` }],
   });
@@ -41,7 +41,7 @@ export async function analyzeContractText(text: string): Promise<Report> {
 export async function analyzeContractImage(base64Image: string): Promise<Report> {
   const responseText = await callClaude({
     model: MODEL,
-    max_tokens: 2048,
+    max_tokens: 4096,
     system: ANALYSIS_SYSTEM_PROMPT,
     messages: [{
       role: 'user',
@@ -57,6 +57,46 @@ export async function analyzeContractImage(base64Image: string): Promise<Report>
 
   const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
   return JSON.parse(cleaned) as Report;
+}
+
+export async function analyzeContractPDF(base64: string): Promise<Report> {
+  try {
+    console.log('Enviando PDF para análise...', { base64Length: base64.length });
+
+    const responseText = await callClaude({
+      model: MODEL,
+      max_tokens: 4096,
+      system: ANALYSIS_SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: 'application/pdf',
+              data: base64,
+            },
+          },
+          { type: 'text', text: 'Analise este contrato.' },
+        ],
+      }],
+    });
+
+    console.log('Resposta da API (primeiros 200 chars):', responseText.substring(0, 200));
+
+    if (!responseText || responseText.trim().length === 0) {
+      throw new Error('API retornou resposta vazia');
+    }
+
+    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    console.log('JSON após limpeza (primeiros 200 chars):', cleaned.substring(0, 200));
+
+    return JSON.parse(cleaned) as Report;
+  } catch (err: any) {
+    console.error('Erro ao analisar PDF:', err);
+    throw err;
+  }
 }
 
 export async function sendChatMessage(

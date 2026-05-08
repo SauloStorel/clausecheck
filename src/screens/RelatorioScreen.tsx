@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, Animated,
+  View, Text, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
+import { primeCache } from '../services/pdfCache';
 import { RiskBadge } from '../components/RiskBadge';
 import { ClauseCard } from '../components/ClauseCard';
 import { Analysis, RootStackParamList } from '../types';
-import { C, F, riskColors } from '../constants/theme';
-import { useEntrance } from '../hooks/useEntrance';
+import { C, F } from '../constants/theme';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Relatorio'>;
@@ -21,12 +22,6 @@ export function RelatorioScreen({ navigation, route }: Props) {
   const { analysisId } = route.params;
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(true);
-  const [clauseCount, setClauseCount] = useState(0);
-
-  const hero  = useEntrance(60);
-  const stats = useEntrance(160);
-  const body  = useEntrance(260);
-
   useEffect(() => { fetchAnalysis(); }, []);
 
   async function fetchAnalysis() {
@@ -34,17 +29,7 @@ export function RelatorioScreen({ navigation, route }: Props) {
       const { data, error } = await supabase.from('analyses').select('*').eq('id', analysisId).single();
       if (error) throw error;
       setAnalysis(data);
-      if (data?.report?.clauses?.length) {
-        const total = data.report.clauses.length;
-        const steps = 20;
-        const interval = 900 / steps;
-        let step = 0;
-        const timer = setInterval(() => {
-          step++;
-          setClauseCount(Math.round((step / steps) * total));
-          if (step >= steps) clearInterval(timer);
-        }, interval);
-      }
+      if (data.report) primeCache(data);
     } catch {
       Alert.alert('Erro', 'Não foi possível carregar o relatório.');
     } finally {
@@ -55,8 +40,8 @@ export function RelatorioScreen({ navigation, route }: Props) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={C.gold} size="large" />
-        <Text style={styles.loadingText}>Carregando relatório...</Text>
+        <ActivityIndicator color={C.accent} size="large" />
+        <Text style={styles.loadingText}>Carregando relatório…</Text>
       </View>
     );
   }
@@ -66,96 +51,237 @@ export function RelatorioScreen({ navigation, route }: Props) {
   }
 
   const { report } = analysis;
-  const risk = riskColors[report.risk_level];
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Animated.View style={[styles.heroCard, { borderColor: risk.border, backgroundColor: risk.bg }, hero]}>
+        {/* Hero */}
+        <View style={styles.hero}>
           <RiskBadge level={report.risk_level} />
-          <Text style={styles.heroTitle} numberOfLines={2}>{analysis.title}</Text>
+          <Text style={styles.heroTitle} numberOfLines={3}>{analysis.title}</Text>
           <Text style={styles.heroDate}>
-            {new Date(analysis.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+            {new Date(analysis.created_at).toLocaleDateString('pt-BR', {
+              day: '2-digit', month: 'long', year: 'numeric',
+            })}
           </Text>
-        </Animated.View>
+        </View>
 
-        <Animated.View style={[styles.statsRow, stats]}>
+        {/* Stats */}
+        <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{clauseCount}</Text>
-            <Text style={styles.statLabel}>CLÁUSULAS</Text>
+            <Text style={styles.statNumber}>{report.clauses.length}</Text>
+            <Text style={styles.statLabel}>cláusulas</Text>
           </View>
-          <View style={styles.statDivider} />
           <View style={styles.statBox}>
             <Text style={styles.statNumber}>{report.recommendations.length}</Text>
-            <Text style={styles.statLabel}>RECOMENDAÇÕES</Text>
+            <Text style={styles.statLabel}>recomendações</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: risk.fg }]}>
-              {report.risk_level === 'high' ? 'ALTO' : report.risk_level === 'medium' ? 'MED' : 'OK'}
-            </Text>
-            <Text style={styles.statLabel}>RISCO</Text>
-          </View>
-        </Animated.View>
+        </View>
 
-        <Animated.View style={body}>
-          <Text style={styles.sectionLabel}>RESUMO</Text>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryText}>{report.summary}</Text>
-          </View>
+        {/* Resumo */}
+        <Text style={styles.sectionLabel}>Resumo</Text>
+        <View style={[styles.card, { padding: 16 }]}>
+          <Text style={styles.summaryText}>{report.summary}</Text>
+        </View>
 
-          <Text style={styles.sectionLabel}>CLÁUSULAS ANALISADAS</Text>
-          {report.clauses.map(clause => (
-            <ClauseCard key={clause.id} clause={clause} />
+        {/* Cláusulas */}
+        <Text style={styles.sectionLabel}>Cláusulas analisadas</Text>
+        <View style={styles.card}>
+          {report.clauses.map((clause, i) => (
+            <ClauseCard
+              key={clause.id}
+              clause={clause}
+              isLast={i === report.clauses.length - 1}
+            />
           ))}
+        </View>
 
-          {report.recommendations.length > 0 && (
-            <>
-              <Text style={styles.sectionLabel}>RECOMENDAÇÕES</Text>
+        {/* Recomendações */}
+        {report.recommendations.length > 0 && (
+          <>
+            <Text style={styles.sectionLabel}>Recomendações</Text>
+            <View style={[styles.card, { paddingVertical: 4 }]}>
               {report.recommendations.map((rec, i) => (
-                <View key={i} style={styles.recItem}>
-                  <Text style={styles.recBullet}>—</Text>
+                <View
+                  key={i}
+                  style={[
+                    styles.recItem,
+                    i !== report.recommendations.length - 1 && styles.recItemBorder,
+                  ]}
+                >
+                  <View style={styles.recDot} />
                   <Text style={styles.recText}>{rec}</Text>
                 </View>
               ))}
-            </>
-          )}
-          <View style={{ height: 32 }} />
-        </Animated.View>
+            </View>
+          </>
+        )}
+
+        <View style={{ height: 160 }} />
       </ScrollView>
 
-      <TouchableOpacity style={styles.chatButton} onPress={() => navigation.navigate('Chat', { analysisId })} activeOpacity={0.85}>
-        <Text style={styles.chatButtonText}>TIRAR DÚVIDAS SOBRE ESTE CONTRATO</Text>
-      </TouchableOpacity>
+      <View style={styles.chatButtonWrap}>
+        <TouchableOpacity
+          style={styles.exportButton}
+          onPress={() => navigation.navigate('PDFPreview', { analysisId })}
+          activeOpacity={0.85}
+        >
+          <View style={styles.exportButtonInner}>
+            <Ionicons name="document-text-outline" size={18} color={C.accent} />
+            <Text style={styles.exportButtonText}>Visualizar PDF</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.chatButton}
+          onPress={() => navigation.navigate('Chat', { analysisId })}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.chatButtonText}>Tirar dúvidas sobre este contrato</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: C.bg },
-  centered:     { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
-  content:      { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 120 },
-  heroCard:     { borderWidth: 1, borderRadius: 4, padding: 20, marginBottom: 16, gap: 10 },
-  heroTitle:    { fontFamily: 'Georgia', fontSize: 20, color: C.text1, lineHeight: 28 },
-  heroDate:     { fontFamily: F.mono, fontSize: 11, color: C.text3, letterSpacing: 1 },
+  container: { flex: 1, backgroundColor: C.bg },
+  centered: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' },
+  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
+  hero: {
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 20,
+    gap: 10,
+  },
+  heroTitle: {
+    fontFamily: F.display,
+    fontSize: 26,
+    fontWeight: '700',
+    color: C.text1,
+    letterSpacing: -0.4,
+    lineHeight: 32,
+  },
+  heroDate: {
+    fontFamily: F.body,
+    fontSize: 14,
+    color: C.text3,
+  },
   statsRow: {
-    flexDirection: 'row', backgroundColor: C.surface, borderWidth: 1,
-    borderColor: C.border, borderRadius: 4, marginBottom: 24, overflow: 'hidden',
+    flexDirection: 'row',
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: 28,
   },
-  statBox:      { flex: 1, alignItems: 'center', paddingVertical: 16 },
-  statDivider:  { width: StyleSheet.hairlineWidth, backgroundColor: C.border },
-  statNumber:   { fontFamily: 'Georgia', fontSize: 22, color: C.gold, marginBottom: 4 },
-  statLabel:    { fontFamily: F.mono, fontSize: 9, color: C.text3, letterSpacing: 2 },
-  sectionLabel: { fontFamily: F.mono, fontSize: 10, color: C.text3, letterSpacing: 2, marginBottom: 12, marginTop: 4 },
-  summaryCard:  { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 16, marginBottom: 24 },
-  summaryText:  { fontFamily: F.body, color: C.text2, fontSize: 14, lineHeight: 22 },
-  recItem:      { flexDirection: 'row', gap: 10, marginBottom: 10, paddingLeft: 4 },
-  recBullet:    { fontFamily: F.mono, color: C.goldDim, fontSize: 14, lineHeight: 22 },
-  recText:      { fontFamily: F.body, color: C.text2, fontSize: 14, lineHeight: 22, flex: 1 },
-  loadingText:  { fontFamily: F.body, color: C.text3, marginTop: 12 },
+  statBox: { flex: 1, alignItems: 'center' },
+  statNumber: {
+    fontFamily: F.display,
+    fontSize: 22,
+    fontWeight: '600',
+    color: C.text1,
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontFamily: F.body,
+    fontSize: 13,
+    color: C.text3,
+  },
+  sectionLabel: {
+    fontFamily: F.body,
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.text3,
+    marginBottom: 8,
+    marginTop: 4,
+    paddingLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  summaryText: {
+    fontFamily: F.body,
+    color: C.text1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  recItem: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'flex-start',
+  },
+  recItemBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
+  },
+  recDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: C.accent,
+    marginTop: 9,
+  },
+  recText: {
+    flex: 1,
+    fontFamily: F.body,
+    color: C.text1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  loadingText: {
+    fontFamily: F.body,
+    color: C.text3,
+    marginTop: 12,
+    fontSize: 15,
+  },
+  chatButtonWrap: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 16,
+    gap: 10,
+  },
+  exportButton: {
+    backgroundColor: C.surface,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: C.accent,
+  },
+  exportButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  exportButtonText: {
+    fontFamily: F.body,
+    color: C.accent,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   chatButton: {
-    position: 'absolute', bottom: 28, left: 20, right: 20,
-    backgroundColor: C.gold, borderRadius: 4, paddingVertical: 17, alignItems: 'center',
+    backgroundColor: C.accent,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    shadowColor: C.accent,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  chatButtonText: { fontFamily: F.body, color: C.bg, fontSize: 11, fontWeight: '700', letterSpacing: 3 },
+  chatButtonText: {
+    fontFamily: F.body,
+    color: C.textInverse,
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

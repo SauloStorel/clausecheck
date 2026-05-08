@@ -1,80 +1,82 @@
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Analysis } from '../types';
-import { C, F, riskColors } from '../constants/theme';
+import { C, F, riskColors, riskLabels } from '../constants/theme';
 
 interface Props {
   analysis: Analysis;
   onPress: () => void;
+  isLast?: boolean;
 }
 
-export const AnalysisItem = memo(function AnalysisItem({ analysis, onPress }: Props) {
+export const AnalysisItem = memo(function AnalysisItem({ analysis, onPress, isLast }: Props) {
   const date = new Date(analysis.created_at).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+    day: '2-digit', month: 'short',
+  }).replace('.', '');
+
   const risk = analysis.risk_level ? riskColors[analysis.risk_level] : null;
+  const riskLabel = analysis.risk_level ? riskLabels[analysis.risk_level] : null;
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.container} activeOpacity={0.75}>
-      {risk && <View style={[styles.stripe, { backgroundColor: risk.fg }]} />}
-      <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={1}>{analysis.title}</Text>
-        <Text style={styles.date}>{date}</Text>
-      </View>
-      {risk && (
-        <View style={[styles.riskPill, { backgroundColor: risk.bg, borderColor: risk.border }]}>
-          <View style={[styles.riskDot, { backgroundColor: risk.fg }]} />
+    <TouchableOpacity onPress={onPress} activeOpacity={0.5}>
+      <View style={styles.row}>
+        <View style={styles.left}>
+          {risk && <View style={[styles.dot, { backgroundColor: risk.fg }]} />}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title} numberOfLines={1}>{analysis.title}</Text>
+            <Text style={styles.meta} numberOfLines={1}>
+              {riskLabel ? `${riskLabel} · ${date}` : date}
+            </Text>
+          </View>
         </View>
-      )}
+        <Text style={styles.chevron}>›</Text>
+      </View>
+      {!isLast && <View style={styles.separator} />}
     </TouchableOpacity>
   );
 });
 
 const styles = StyleSheet.create({
-  container: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: C.surface,
-    borderRadius: 4,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: C.border,
-    overflow: 'hidden',
-  },
-  stripe: {
-    width: 3,
-    alignSelf: 'stretch',
-  },
-  content: {
-    flex: 1,
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
+    backgroundColor: C.surface,
+  },
+  left: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   title: {
     fontFamily: F.body,
     color: C.text1,
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 2,
   },
-  date: {
-    fontFamily: F.mono,
+  meta: {
+    fontFamily: F.body,
     color: C.text3,
-    fontSize: 11,
-    letterSpacing: 0.5,
+    fontSize: 13,
   },
-  riskPill: {
-    marginRight: 14,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  chevron: {
+    fontFamily: F.body,
+    color: C.text4,
+    fontSize: 22,
+    fontWeight: '300',
+    marginLeft: 8,
   },
-  riskDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.border,
+    marginLeft: 36,
   },
 });

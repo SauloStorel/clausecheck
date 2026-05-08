@@ -1,58 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, Dimensions, Animated, Easing,
+  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import { RootStackParamList } from '../types';
 import { C, F } from '../constants/theme';
-import { useEntrance } from '../hooks/useEntrance';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Login'>;
 };
-
-const { height } = Dimensions.get('window');
-
-function AnimatedRing({ size, delay, opacity: baseOpacity }: { size: number; delay: number; opacity: number }) {
-  const scale = useRef(new Animated.Value(0.88)).current;
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(scale, {
-            toValue: 1.1, duration: 2800, useNativeDriver: true,
-            easing: Easing.inOut(Easing.sin),
-          }),
-          Animated.timing(scale, {
-            toValue: 0.88, duration: 2800, useNativeDriver: true,
-            easing: Easing.inOut(Easing.sin),
-          }),
-        ])
-      ).start();
-    }, delay);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: 1,
-          borderColor: C.gold,
-          opacity: baseOpacity,
-        },
-        { transform: [{ scale }] },
-      ]}
-    />
-  );
-}
 
 export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
@@ -61,11 +20,6 @@ export function LoginScreen({ navigation }: Props) {
   const [modo, setModo] = useState<'login' | 'cadastro'>('login');
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [error, setError] = useState('');
-
-  const brand   = useEntrance(80);
-  const form    = useEntrance(240);
-  const actions = useEntrance(400);
-  const btnScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -76,11 +30,6 @@ export function LoginScreen({ navigation }: Props) {
   async function handleAuth() {
     setError('');
     if (!email || !senha) { setError('Preencha e-mail e senha.'); return; }
-
-    Animated.sequence([
-      Animated.timing(btnScale, { toValue: 0.96, duration: 80, useNativeDriver: true }),
-      Animated.timing(btnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
-    ]).start();
 
     setLoading(true);
     try {
@@ -100,122 +49,193 @@ export function LoginScreen({ navigation }: Props) {
     }
   }
 
+  const isLogin = modo === 'login';
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.ringsContainer} pointerEvents="none">
-        <AnimatedRing size={260} delay={0}   opacity={0.20} />
-        <AnimatedRing size={400} delay={500} opacity={0.12} />
-        <AnimatedRing size={540} delay={900} opacity={0.06} />
-      </View>
-
-      <View style={styles.inner}>
-        <Animated.View style={[styles.brandBlock, brand]}>
-          <Text style={styles.brandIcon}>§</Text>
-          <Text style={styles.brandName}>ClauseCheck</Text>
-          <Text style={styles.brandTag}>ANÁLISE INTELIGENTE DE CONTRATOS</Text>
-        </Animated.View>
-
-        <Animated.View style={form}>
-          <View style={styles.divider} />
-
-          <Text style={styles.fieldLabel}>E-MAIL</Text>
-          <TextInput
-            style={[styles.input, focusedField === 'email' && styles.inputFocused]}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor={C.text3}
-            placeholder="seu@email.com"
-            onFocus={() => setFocusedField('email')}
-            onBlur={() => setFocusedField(null)}
-          />
-
-          <Text style={[styles.fieldLabel, { marginTop: 22 }]}>SENHA</Text>
-          <TextInput
-            style={[styles.input, focusedField === 'senha' && styles.inputFocused]}
-            value={senha}
-            onChangeText={setSenha}
-            secureTextEntry
-            placeholderTextColor={C.text3}
-            placeholder="••••••••"
-            onFocus={() => setFocusedField('senha')}
-            onBlur={() => setFocusedField(null)}
-          />
-
-          {error !== '' && (
-            <Text
-              style={styles.errorText}
-              accessibilityLiveRegion="polite"
-              accessibilityRole="alert"
-            >
-              {error}
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.header}>
+            <Text style={styles.brand}>ClauseCheck</Text>
+            <Text style={styles.title}>{isLogin ? 'Entrar' : 'Criar conta'}</Text>
+            <Text style={styles.subtitle}>
+              {isLogin
+                ? 'Acesse seus contratos analisados.'
+                : 'Comece a analisar contratos em segundos.'}
             </Text>
-          )}
-          <View style={styles.divider} />
-        </Animated.View>
+          </View>
 
-        <Animated.View style={actions}>
-          <Animated.View style={{ transform: [{ scale: btnScale }] }}>
+          <View style={styles.form}>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>E-mail</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'email' && styles.inputFocused]}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholderTextColor={C.text3}
+                placeholder="seu@email.com"
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Senha</Text>
+              <TextInput
+                style={[styles.input, focusedField === 'senha' && styles.inputFocused]}
+                value={senha}
+                onChangeText={setSenha}
+                secureTextEntry
+                placeholderTextColor={C.text3}
+                placeholder="Mínimo 6 caracteres"
+                onFocus={() => setFocusedField('senha')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+
+            {error !== '' && (
+              <Text
+                style={styles.errorText}
+                accessibilityLiveRegion="polite"
+                accessibilityRole="alert"
+              >
+                {error}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.actions}>
             <TouchableOpacity
-              style={[styles.button, loading && { opacity: 0.65 }]}
+              style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleAuth}
               disabled={loading}
               activeOpacity={0.85}
             >
-              <Text style={styles.buttonText}>
-                {loading ? 'AGUARDE...' : modo === 'login' ? 'ENTRAR' : 'CRIAR CONTA'}
+              {loading
+                ? <ActivityIndicator color={C.textInverse} size="small" />
+                : <Text style={styles.buttonText}>{isLogin ? 'Entrar' : 'Criar conta'}</Text>
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toggle}
+              onPress={() => { setError(''); setModo(m => m === 'login' ? 'cadastro' : 'login'); }}
+            >
+              <Text style={styles.toggleText}>
+                {isLogin ? 'Não tem conta? ' : 'Já tem conta? '}
+                <Text style={styles.toggleLink}>
+                  {isLogin ? 'Cadastre-se' : 'Entrar'}
+                </Text>
               </Text>
             </TouchableOpacity>
-          </Animated.View>
-
-          <TouchableOpacity
-            style={styles.toggleRow}
-            onPress={() => { setError(''); setModo(m => m === 'login' ? 'cadastro' : 'login'); }}
-          >
-            <Text style={styles.toggleText}>
-              {modo === 'login' ? 'Não tem conta? ' : 'Já tem conta? '}
-              <Text style={styles.toggleLink}>
-                {modo === 'login' ? 'Cadastre-se' : 'Entrar'}
-              </Text>
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
-    </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg },
-  ringsContainer: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    top: -height * 0.12,
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: C.surface },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
-  inner:        { flex: 1, justifyContent: 'center', paddingHorizontal: 32 },
-  brandBlock:   { alignItems: 'center', marginBottom: 44 },
-  brandIcon:    { fontFamily: 'Georgia', fontSize: 56, color: C.gold, marginBottom: 12 },
-  brandName:    { fontFamily: 'Georgia', fontSize: 32, color: C.text1, letterSpacing: 0.5, marginBottom: 8 },
-  brandTag:     { fontFamily: F.mono, fontSize: 9, color: C.goldDim, letterSpacing: 3, textAlign: 'center' },
-  divider:      { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginVertical: 26 },
-  fieldLabel:   { fontFamily: F.mono, fontSize: 9, color: C.text3, letterSpacing: 2, marginBottom: 10 },
+  header: {
+    marginTop: 24,
+    marginBottom: 32,
+  },
+  brand: {
+    fontFamily: F.body,
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.accent,
+    marginBottom: 14,
+  },
+  title: {
+    fontFamily: F.display,
+    fontSize: 32,
+    fontWeight: '700',
+    color: C.text1,
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontFamily: F.body,
+    fontSize: 16,
+    color: C.text3,
+    lineHeight: 22,
+  },
+  form: {
+    gap: 18,
+  },
+  fieldGroup: {
+    gap: 8,
+  },
+  label: {
+    fontFamily: F.body,
+    fontSize: 13,
+    fontWeight: '500',
+    color: C.text2,
+  },
   input: {
-    borderBottomWidth: 1, borderBottomColor: C.border,
-    paddingVertical: 10, fontSize: 16, fontFamily: F.body, color: C.text1,
+    backgroundColor: C.bg,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 16,
+    fontFamily: F.body,
+    color: C.text1,
   },
-  inputFocused: { borderBottomColor: C.gold },
-  errorText:    { fontFamily: F.body, color: C.danger, fontSize: 13, marginTop: 14, textAlign: 'center' },
+  inputFocused: {
+    borderColor: C.accent,
+    backgroundColor: C.surface,
+  },
+  errorText: {
+    fontFamily: F.body,
+    color: C.danger,
+    fontSize: 14,
+    marginTop: 4,
+  },
+  actions: {
+    marginTop: 28,
+  },
   button: {
-    backgroundColor: C.gold, borderRadius: 4,
-    paddingVertical: 16, alignItems: 'center', marginBottom: 20,
+    backgroundColor: C.accent,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: 18,
   },
-  buttonText:   { fontFamily: F.body, color: C.bg, fontSize: 12, fontWeight: '700', letterSpacing: 3 },
-  toggleRow:    { alignItems: 'center' },
-  toggleText:   { fontFamily: F.body, color: C.text2, fontSize: 13 },
-  toggleLink:   { color: C.gold },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: {
+    fontFamily: F.body,
+    color: C.textInverse,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  toggle: { alignItems: 'center', paddingVertical: 6 },
+  toggleText: {
+    fontFamily: F.body,
+    color: C.text3,
+    fontSize: 15,
+  },
+  toggleLink: {
+    color: C.accent,
+    fontWeight: '600',
+  },
 });
