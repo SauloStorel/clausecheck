@@ -27,31 +27,39 @@ O **ClauseCheck** é um aplicativo mobile desenvolvido em React Native que permi
 
 ## 🛠️ Tecnologias Utilizadas
 
-| Tecnologia | Finalidade |
-|---|---|
-| [React Native](https://reactnative.dev/) | Framework mobile |
-| [Expo](https://expo.dev/) | Toolchain e build |
-| [React Navigation](https://reactnavigation.org/) | Navegação entre telas |
-| [Supabase](https://supabase.com/) | Autenticação e banco de dados |
-| [Claude API (Anthropic)](https://www.anthropic.com/) | Análise de contratos e chat com IA |
-| [expo-image-picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) | Câmera e galeria |
-| [expo-file-system](https://docs.expo.dev/versions/latest/sdk/filesystem/) | Conversão de imagem para base64 |
-| TypeScript | Tipagem estática |
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [React Native](https://reactnative.dev/) | 0.81.5 | Framework mobile |
+| [Expo](https://expo.dev/) | 54.0.0 | Toolchain e build |
+| [React Navigation](https://reactnavigation.org/) | 7.2.2 | Navegação entre telas |
+| [React](https://react.dev/) | 19.1.0 | Biblioteca de UI |
+| [Supabase](https://supabase.com/) | 2.105.3 | Autenticação, banco de dados e Edge Functions |
+| [Claude API (Anthropic)](https://www.anthropic.com/) | via Edge Functions | Análise de contratos e chat com IA |
+| [@ronradtke/react-native-markdown-display](https://github.com/ronradtke/react-native-markdown-display) | 8.1.0 | Renderização de markdown |
+| [expo-image-picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) | 17.0.11 | Câmera e galeria |
+| [expo-file-system](https://docs.expo.dev/versions/latest/sdk/filesystem/) | 19.0.22 | Acesso ao sistema de arquivos |
+| [expo-document-picker](https://docs.expo.dev/versions/latest/sdk/documentpicker/) | 14.0.8 | Seletor de documentos |
+| [expo-sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) | 14.0.8 | Compartilhamento de arquivos |
+| [expo-print](https://docs.expo.dev/versions/latest/sdk/print/) | 15.0.8 | Impressão e PDF |
+| [expo-haptics](https://docs.expo.dev/versions/latest/sdk/haptics/) | 15.0.8 | Feedback tátil |
+| [TypeScript](https://www.typescriptlang.org/) | 5.9.2 | Tipagem estática |
 
 ---
 
 ## ✅ Componentes React Native Utilizados
 
-| Componente | Onde é utilizado |
+| Componente | Uso |
 |---|---|
-| `View` | Estrutura de layout de todas as 5 telas |
+| `View` | Estrutura de layout de todas as telas |
 | `Text` | Títulos, descrições, cláusulas, mensagens do chat |
 | `TextInput` | Campos de login, texto do contrato e input do chat |
 | `TouchableOpacity` / `Button` | Botões de ação em todas as telas |
 | `FlatList` | Histórico de contratos, lista de cláusulas e mensagens do chat |
-| `Image` | Logo na tela de login, preview de foto do contrato |
-| **Flexbox** | Layout responsivo de todas as telas |
-| **Navegação entre telas** | React Navigation Stack com 5 telas conectadas |
+| `ScrollView` | Conteúdo em telas com muito texto (relatório, PDF preview) |
+| `Image` | Logo, preview de foto do contrato |
+| `ActivityIndicator` | Loading durante análise e busca de dados |
+| **Flexbox Layout** | Layout responsivo de todas as telas |
+| **React Navigation Stack** | 8 telas conectadas com roteamento seguro |
 
 ---
 
@@ -59,11 +67,14 @@ O **ClauseCheck** é um aplicativo mobile desenvolvido em React Native que permi
 
 | # | Tela | Descrição |
 |---|---|---|
-| 1 | **Login / Cadastro** | Autenticação com e-mail e senha via Supabase |
-| 2 | **Histórico** | Lista de todos os contratos já analisados com badge de risco |
-| 3 | **Nova Análise** | Envio do contrato por foto (câmera/galeria) ou texto |
-| 4 | **Relatório** | Resultado com risco geral, cláusulas classificadas e recomendações |
-| 5 | **Chat** | Conversa contextual com a IA sobre o contrato analisado |
+| 1 | **Onboarding** | Boas-vindas e apresentação da plataforma para novos usuários |
+| 2 | **Login / Cadastro** | Autenticação com e-mail e senha via Supabase |
+| 3 | **Home (Histórico)** | Lista de todos os contratos já analisados com badge de risco |
+| 4 | **Nova Análise** | Envio do contrato por foto (câmera/galeria), documento ou texto |
+| 5 | **Relatório** | Resultado com risco geral, cláusulas classificadas e recomendações |
+| 6 | **Prévia PDF** | Visualização de PDF antes de enviar para análise |
+| 7 | **Chat** | Conversa contextual com a IA sobre o contrato analisado |
+| 8 | **Perfil** | Configurações do usuário e gerenciamento da conta |
 
 ---
 
@@ -79,9 +90,9 @@ Row Level Security ativado: cada usuário acessa apenas seus próprios dados.
 
 ### Pré-requisitos
 - Node.js 18+
-- Expo Go instalado no celular ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) / [iOS](https://apps.apple.com/app/expo-go/id982107779))
+- Expo CLI (`npm install -g expo-cli`) ou Expo Go instalado no celular ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) / [iOS](https://apps.apple.com/app/expo-go/id982107779))
 - Conta no [Supabase](https://supabase.com/) (gratuita)
-- Chave de API da [Anthropic](https://console.anthropic.com/) (Claude)
+- Chave de API da [Anthropic](https://console.anthropic.com/) (apenas para configurar Edge Functions)
 
 ### 1. Clonar o repositório
 
@@ -139,11 +150,16 @@ Edite o arquivo `.env` com suas credenciais:
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
-EXPO_PUBLIC_ANTHROPIC_API_KEY=sk-ant-sua-chave
 ```
 
-> As chaves do Supabase estão em: **Project Settings → API**  
-> A chave do Claude está em: **console.anthropic.com → API Keys**
+**Configurar a API Anthropic nas Edge Functions:**
+
+1. Vá para seu projeto no Supabase
+2. Acesse **Edge Functions** → crie a função `analyze-contract` e `chat-contract`
+3. Configure a chave da API Anthropic como **variável de ambiente** nas Edge Functions
+4. As requisições do app são feitas para as Edge Functions (mais seguro que expor a chave no cliente)
+
+> As chaves do Supabase estão em: **Project Settings → API**
 
 ### 5. Rodar o app
 ```bash
@@ -190,18 +206,31 @@ Se você descobrir uma vulnerabilidade, **não abra uma issue pública**. Leia n
 
 <table>
   <tr>
+    <td align="center"><b>Onboarding</b></td>
     <td align="center"><b>Login</b></td>
     <td align="center"><b>Histórico</b></td>
     <td align="center"><b>Nova Análise</b></td>
-    <td align="center"><b>Relatório</b></td>
-    <td align="center"><b>Chat</b></td>
   </tr>
   <tr>
-    <td><img src="assets/screenshots/login.png" width="160"/></td>
-    <td><img src="assets/screenshots/historico.png" width="160"/></td>
-    <td><img src="assets/screenshots/nova-analise.png" width="160"/></td>
-    <td><img src="assets/screenshots/relatorio.png" width="160"/></td>
-    <td><img src="assets/screenshots/chat.png" width="160"/></td>
+    <td><img src="assets/screenshots/onboarding.png" width="140"/></td>
+    <td><img src="assets/screenshots/login.png" width="140"/></td>
+    <td><img src="assets/screenshots/historico.png" width="140"/></td>
+    <td><img src="assets/screenshots/nova-analise.png" width="140"/></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center"><b>PDF Preview</b></td>
+    <td align="center"><b>Relatório</b></td>
+    <td align="center"><b>Chat</b></td>
+    <td align="center"><b>Perfil</b></td>
+  </tr>
+  <tr>
+    <td><img src="assets/screenshots/pdf-preview.png" width="140"/></td>
+    <td><img src="assets/screenshots/relatorio.png" width="140"/></td>
+    <td><img src="assets/screenshots/chat.png" width="140"/></td>
+    <td><img src="assets/screenshots/perfil.png" width="140"/></td>
   </tr>
 </table>
 
@@ -215,25 +244,31 @@ Se você descobrir uma vulnerabilidade, **não abra uma issue pública**. Leia n
 clausecheck/
 ├── src/
 │   ├── screens/
-│   │   ├── LoginScreen.tsx       # Tela 1 — Login e cadastro
-│   │   ├── HomeScreen.tsx        # Tela 2 — Histórico de contratos
-│   │   ├── NovaAnaliseScreen.tsx # Tela 3 — Envio do contrato
-│   │   ├── RelatorioScreen.tsx   # Tela 4 — Resultado da análise
-│   │   └── ChatScreen.tsx        # Tela 5 — Chat com a IA
+│   │   ├── OnboardingScreen.tsx  # Boas-vindas e introdução
+│   │   ├── LoginScreen.tsx       # Login e cadastro
+│   │   ├── HomeScreen.tsx        # Página inicial
+│   │   ├── HistoricoScreen.tsx   # Histórico de contratos analisados
+│   │   ├── NovaAnaliseScreen.tsx # Envio do contrato (foto/texto/PDF)
+│   │   ├── RelatorioScreen.tsx   # Resultado da análise com cláusulas
+│   │   ├── PDFPreviewScreen.tsx  # Prévia de PDF antes da análise
+│   │   ├── ChatScreen.tsx        # Chat contextual com a IA
+│   │   └── PerfilScreen.tsx      # Perfil e configurações do usuário
 │   ├── components/
 │   │   ├── RiskBadge.tsx         # Badge 🔴🟡🟢 de risco
 │   │   ├── ClauseCard.tsx        # Card expansível de cláusula
 │   │   ├── MessageBubble.tsx     # Bolha de mensagem do chat
 │   │   └── AnalysisItem.tsx      # Item da lista de histórico
 │   ├── services/
-│   │   ├── supabase.ts           # Cliente Supabase
-│   │   └── claude.ts             # Integração Claude API
+│   │   ├── supabase.ts           # Cliente Supabase (auth, DB)
+│   │   └── claude.ts             # Integração com Edge Functions
 │   ├── constants/
-│   │   └── prompts.ts            # Prompts do sistema para o Claude
+│   │   └── prompts.ts            # Prompts do sistema para a IA
 │   └── types/
 │       └── index.ts              # Tipos TypeScript globais
-├── App.tsx                       # Navegação principal
+├── App.tsx                       # Navegação e configuração principal
 ├── .env.example                  # Modelo de variáveis de ambiente
+├── .supabase/                    # Configurações do Supabase
+├── package.json                  # Dependências do projeto
 └── README.md
 ```
 
