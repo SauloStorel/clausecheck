@@ -3,25 +3,8 @@ import { Report, Message } from '../types';
 
 export type ProgressCallback = (pct: number, step: string) => void;
 
-// Etapas simuladas com tempo acumulado em ms
-// O progresso desacelera conforme se aproxima do fim (easing exponencial)
-const SIMULATED_STEPS: { ms: number; pct: number; step: string }[] = [
-  { ms: 0,     pct: 10, step: 'Lendo o contrato…'         },
-  { ms: 1500,  pct: 25, step: 'Identificando cláusulas…'   },
-  { ms: 4000,  pct: 42, step: 'Avaliando riscos jurídicos…' },
-  { ms: 8000,  pct: 58, step: 'Verificando base legal…'    },
-  { ms: 14000, pct: 72, step: 'Verificando base legal…'    },
-  { ms: 22000, pct: 83, step: 'Preparando o relatório…'    },
-  { ms: 35000, pct: 89, step: 'Preparando o relatório…'    },
-];
-
-function simulateProgress(onProgress: ProgressCallback): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  for (const { ms, pct, step } of SIMULATED_STEPS) {
-    timers.push(setTimeout(() => onProgress(pct, step), ms));
-  }
-  return () => timers.forEach(clearTimeout);
-}
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 function parseAndValidateReport(data: unknown): Report {
   const r = data as Record<string, unknown>;
@@ -37,11 +20,60 @@ function parseAndValidateReport(data: unknown): Report {
   return data as Report;
 }
 
-async function invokeEdgeFunction<T>(name: string, body: object): Promise<T> {
-  const { data, error } = await supabase.functions.invoke(name, { body });
-  if (error) throw new Error(error.message ?? 'Erro na função de análise.');
-  if (data?.error) throw new Error(data.error);
-  return data as T;
+function analyzeViaXHR(
+  mode: string,
+  payload: unknown,
+  token: string,
+  onProgress?: ProgressCallback,
+): Promise<Report> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${SUPABASE_URL}/functions/v1/analyze-contract`);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.setRequestHeader('apikey', SUPABASE_KEY);
+    xhr.timeout = 120_000;
+
+    let cursor = 0;
+    let settled = false;
+
+    function processChunk() {
+      const newText = xhr.responseText.slice(cursor);
+      cursor = xhr.responseText.length;
+      if (!newText) return;
+
+      // Cada evento SSE termina com \n\n; processa linha a linha
+      for (const line of newText.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        let event: { type: string; pct?: number; step?: string; report?: unknown; message?: string };
+        try { event = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (event.type === 'progress' && event.pct != null) {
+          onProgress?.(event.pct, event.step ?? '');
+        } else if (event.type === 'result' && !settled) {
+          settled = true;
+          try { resolve(parseAndValidateReport(event.report)); } catch (e) { reject(e); }
+        } else if (event.type === 'error' && !settled) {
+          settled = true;
+          reject(new Error(event.message ?? 'Erro na análise.'));
+        }
+      }
+    }
+
+    // readyState 3 = LOADING — recebendo chunks em tempo real
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState >= 3) processChunk();
+      if (xhr.readyState === 4 && !settled) {
+        settled = true;
+        reject(new Error('Análise encerrada sem resultado.'));
+      }
+    };
+
+    xhr.onerror   = () => { if (!settled) { settled = true; reject(new Error('Erro de rede.')); } };
+    xhr.ontimeout = () => { if (!settled) { settled = true; reject(new Error('Tempo esgotado.')); } };
+
+    xhr.send(JSON.stringify({ mode, payload }));
+  });
 }
 
 async function analyzeWithProgress(
@@ -49,19 +81,9 @@ async function analyzeWithProgress(
   payload: unknown,
   onProgress?: ProgressCallback,
 ): Promise<Report> {
-  let stopSimulation: (() => void) | undefined;
-  if (onProgress) stopSimulation = simulateProgress(onProgress);
-
-  try {
-    const { report } = await invokeEdgeFunction<{ report: unknown }>('analyze-contract', {
-      mode,
-      payload,
-    });
-    onProgress?.(97, 'Finalizando…');
-    return parseAndValidateReport(report);
-  } finally {
-    stopSimulation?.();
-  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Usuário não autenticado.');
+  return analyzeViaXHR(mode, payload, session.access_token, onProgress);
 }
 
 export async function analyzeContractText(text: string, onProgress?: ProgressCallback): Promise<Report> {
@@ -81,10 +103,10 @@ export async function sendChatMessage(
   history: Message[],
   userMessage: string,
 ): Promise<string> {
-  const { reply } = await invokeEdgeFunction<{ reply: string }>('chat-contract', {
-    contractText,
-    history,
-    userMessage,
+  const { data, error } = await supabase.functions.invoke('chat-contract', {
+    body: { contractText, history, userMessage },
   });
-  return reply;
+  if (error) throw new Error(error.message ?? 'Erro no chat.');
+  if (data?.error) throw new Error(data.error);
+  return data.reply as string;
 }
