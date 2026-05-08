@@ -2,7 +2,7 @@
 
 ## Reportando Vulnerabilidades
 
-Se você descobrir uma vulnerabilidade de segurança no ClauseCheck, **por favor não abra uma issue pública**. Em vez disso, envie um e-mail para **saulostorell@gmail.com** com:
+Se você descobrir uma vulnerabilidade de segurança no ClauseCheck, **por favor não abra uma issue pública**. Em vez disso, envie um e-mail para **[EMAIL_ADDRESS]** com:
 
 - Descrição da vulnerabilidade
 - Passos para reproduzir (se aplicável)

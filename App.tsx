@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { NovaAnaliseScreen } from './src/screens/NovaAnaliseScreen';
+import { LoadingAnalysisScreen } from './src/screens/LoadingAnalysisScreen';
 import { RelatorioScreen } from './src/screens/RelatorioScreen';
 import { ChatScreen } from './src/screens/ChatScreen';
 import { RootStackParamList } from './src/types';
@@ -50,6 +51,11 @@ export default function App() {
             name="NovaAnalise"
             component={NovaAnaliseScreen}
             options={{ title: 'Nova Análise' }}
+          />
+          <Stack.Screen
+            name="LoadingAnalysis"
+            component={LoadingAnalysisScreen}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Relatorio"

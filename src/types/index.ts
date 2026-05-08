@@ -37,6 +37,12 @@ export type RootStackParamList = {
   Login: undefined;
   Home: undefined;
   NovaAnalise: undefined;
+  LoadingAnalysis: {
+    modo: 'foto' | 'texto';
+    titulo: string;
+    imagemUri?: string;
+    texto: string;
+  };
   Relatorio: { analysisId: string };
   Chat: { analysisId: string };
 };

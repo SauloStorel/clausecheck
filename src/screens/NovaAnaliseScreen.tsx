@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, ActivityIndicator, ScrollView, Animated,
+  StyleSheet, Alert, ScrollView, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { supabase } from '../services/supabase';
-import { analyzeContractText, analyzeContractImage } from '../services/claude';
 import { RootStackParamList } from '../types';
 import { C, F } from '../constants/theme';
 import { useEntrance } from '../hooks/useEntrance';
@@ -22,7 +19,6 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   const [texto, setTexto] = useState('');
   const [imagemUri, setImagemUri] = useState<string | null>(null);
   const [titulo, setTitulo] = useState('');
-  const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const tabs   = useEntrance(60);
@@ -58,31 +54,13 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   async function handleAnalisar() {
     if (modo === 'foto' && !imagemUri) { Alert.alert('Atenção', 'Selecione ou fotografe o contrato.'); return; }
     if (modo === 'texto' && texto.trim().length < 50) { Alert.alert('Atenção', 'Cole o texto (mínimo 50 caracteres).'); return; }
-    setLoading(true);
-    try {
-      let report;
-      if (modo === 'foto' && imagemUri) {
-        const base64 = await FileSystem.readAsStringAsync(imagemUri, { encoding: 'base64' });
-        report = await analyzeContractImage(base64);
-      } else {
-        report = await analyzeContractText(texto);
-      }
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.from('analyses').insert({
-        user_id: user!.id,
-        title: titulo.trim() || 'Contrato sem título',
-        input_text: modo === 'texto' ? texto : null,
-        image_url: imagemUri,
-        report,
-        risk_level: report.risk_level,
-      }).select().single();
-      if (error) throw error;
-      navigation.replace('Relatorio', { analysisId: data.id });
-    } catch (err: any) {
-      Alert.alert('Erro na análise', err.message ?? 'Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
+
+    navigation.navigate('LoadingAnalysis', {
+      modo,
+      titulo: titulo.trim() || 'Contrato sem título',
+      imagemUri: imagemUri || undefined,
+      texto,
+    } as any);
   }
 
   return (
@@ -154,15 +132,8 @@ export function NovaAnaliseScreen({ navigation }: Props) {
         </Animated.View>
 
         <Animated.View style={[{ marginTop: 32 }, btn]}>
-          <TouchableOpacity style={[styles.button, loading && { opacity: 0.7 }]} onPress={handleAnalisar} disabled={loading} activeOpacity={0.85}>
-            {loading ? (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={C.bg} size="small" style={{ marginRight: 10 }} />
-                <Text style={styles.buttonText}>ANALISANDO...</Text>
-              </View>
-            ) : (
-              <Text style={styles.buttonText}>ANALISAR CONTRATO</Text>
-            )}
+          <TouchableOpacity style={styles.button} onPress={handleAnalisar} activeOpacity={0.85}>
+            <Text style={styles.buttonText}>ANALISAR CONTRATO</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
@@ -197,5 +168,4 @@ const styles = StyleSheet.create({
   inputFocused:    { borderBottomColor: C.gold },
   button:          { backgroundColor: C.gold, borderRadius: 4, paddingVertical: 17, alignItems: 'center' },
   buttonText:      { fontFamily: F.body, color: C.bg, fontSize: 12, fontWeight: '700', letterSpacing: 3 },
-  loadingRow:      { flexDirection: 'row', alignItems: 'center' },
 });
