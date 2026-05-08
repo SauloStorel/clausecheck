@@ -6,7 +6,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-haiku-4-5-20251001';
 
 const ANALYSIS_SYSTEM_PROMPT = `Você é um assistente jurídico brasileiro especializado em análise de contratos.
 Analise o contrato fornecido e retorne APENAS um JSON válido, sem texto adicional, com a seguinte estrutura:
