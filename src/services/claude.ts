@@ -35,42 +35,61 @@ function analyzeViaXHR(
     xhr.timeout = 120_000;
 
     let cursor = 0;
+    let lineBuffer = '';
     let settled = false;
+
+    function handleLine(line: string) {
+      if (!line.startsWith('data: ')) return;
+      let event: { type: string; pct?: number; step?: string; report?: unknown; message?: string };
+      try { event = JSON.parse(line.slice(6)); } catch { return; }
+
+      if (event.type === 'progress' && event.pct != null) {
+        onProgress?.(event.pct, event.step ?? '');
+      } else if (event.type === 'result' && !settled) {
+        settled = true;
+        try { resolve(parseAndValidateReport(event.report)); } catch (e) { reject(e); }
+      } else if (event.type === 'error' && !settled) {
+        settled = true;
+        reject(new Error(event.message ?? 'Erro na análise.'));
+      }
+    }
 
     function processChunk() {
       const newText = xhr.responseText.slice(cursor);
       cursor = xhr.responseText.length;
       if (!newText) return;
 
-      // Cada evento SSE termina com \n\n; processa linha a linha
-      for (const line of newText.split('\n')) {
-        if (!line.startsWith('data: ')) continue;
-        let event: { type: string; pct?: number; step?: string; report?: unknown; message?: string };
-        try { event = JSON.parse(line.slice(6)); } catch { continue; }
-
-        if (event.type === 'progress' && event.pct != null) {
-          onProgress?.(event.pct, event.step ?? '');
-        } else if (event.type === 'result' && !settled) {
-          settled = true;
-          try { resolve(parseAndValidateReport(event.report)); } catch (e) { reject(e); }
-        } else if (event.type === 'error' && !settled) {
-          settled = true;
-          reject(new Error(event.message ?? 'Erro na análise.'));
-        }
-      }
+      // Acumula no buffer e processa apenas linhas completas (terminadas em \n)
+      lineBuffer += newText;
+      const lines = lineBuffer.split('\n');
+      // Última entrada pode estar incompleta — guarda no buffer
+      lineBuffer = lines.pop() ?? '';
+      for (const line of lines) handleLine(line.trimEnd());
     }
 
-    // readyState 3 = LOADING — recebendo chunks em tempo real
     xhr.onreadystatechange = () => {
+      // readyState 3 = LOADING (chunks em tempo real, suportado em alguns RN builds)
+      // readyState 4 = DONE (sempre suportado — fallback garante que funciona de qualquer forma)
       if (xhr.readyState >= 3) processChunk();
-      if (xhr.readyState === 4 && !settled) {
-        settled = true;
-        reject(new Error('Análise encerrada sem resultado.'));
+
+      if (xhr.readyState === 4) {
+        // Processar o que sobrou no buffer (última linha sem \n)
+        if (lineBuffer) { handleLine(lineBuffer.trimEnd()); lineBuffer = ''; }
+
+        if (!settled) {
+          settled = true;
+          try {
+            const body = JSON.parse(xhr.responseText);
+            reject(new Error(body.error ?? 'Análise encerrada sem resultado.'));
+          } catch {
+            reject(new Error(`Análise encerrada sem resultado. Status HTTP: ${xhr.status}`));
+          }
+        }
       }
     };
 
     xhr.onerror   = () => { if (!settled) { settled = true; reject(new Error('Erro de rede.')); } };
-    xhr.ontimeout = () => { if (!settled) { settled = true; reject(new Error('Tempo esgotado.')); } };
+    xhr.ontimeout = () => { if (!settled) { settled = true; reject(new Error('Tempo esgotado (>2min).')); } };
 
     xhr.send(JSON.stringify({ mode, payload }));
   });
