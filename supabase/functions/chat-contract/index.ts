@@ -6,7 +6,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-haiku-4-5-20251001';
 
 function chatSystemPrompt(contractText: string): string {
   return `Você é um advogado acessível e empático que ajuda pessoas comuns a entender seus contratos.

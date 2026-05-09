@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { supabase } from '../services/supabase';
 import * as Haptics from 'expo-haptics';
-import { analyzeContractText, analyzeContractImages, analyzeContractPDF } from '../services/claude';
+import { analyzeContractText, analyzeContractImages, analyzeContractPDF, ProgressCallback } from '../services/claude';
 import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
 import { RootStackParamList } from '../types';
@@ -25,57 +25,120 @@ const LOADING_STEPS = [
   'Preparando o relatório…',
 ];
 
-function AnalysisLoadingOverlay({ visible, C }: { visible: boolean; C: any }) {
-  const [stepIndex, setStepIndex] = useState(0);
+const LEGAL_TIPS = [
+  'Multas contratuais acima de 10% do valor total podem ser contestadas judicialmente.',
+  'Em contratos de adesão, cláusulas ambíguas sempre favorecem quem assinou.',
+  'Cláusulas de foro exclusivo podem dificultar ações judiciais no seu estado.',
+  'Reajuste automático acima do IPCA pode ser questionado pelo Código Civil.',
+  'Contratos por prazo indeterminado exigem cláusula de rescisão sem multa.',
+  'Toda obrigação deve ter prazo definido — "a critério da parte" é cláusula abusiva.',
+  'O Código Civil permite revisar contratos com prestações excessivamente onerosas.',
+  'Verifique se há cláusula de renovação automática e seu prazo de cancelamento.',
+];
+
+type OverlayProps = {
+  visible: boolean;
+  C: any;
+  progressPct?: number;
+  progressStep?: string;
+};
+
+function AnalysisLoadingOverlay({ visible, C, progressPct = 0, progressStep = '' }: OverlayProps) {
+  const [tipIndex, setTipIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const textFade = useRef(new Animated.Value(1)).current;
+  const stepFade = useRef(new Animated.Value(1)).current;
+  const tipFade = useRef(new Animated.Value(1)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const prevStep = useRef('');
+
+  // Anima a barra suavemente para o valor real recebido
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressPct / 100,
+      duration: 600,
+      useNativeDriver: false,
+    }).start();
+  }, [progressPct]);
+
+  // Fade no texto do passo quando mudar
+  useEffect(() => {
+    if (!progressStep || progressStep === prevStep.current) return;
+    prevStep.current = progressStep;
+    Animated.sequence([
+      Animated.timing(stepFade, { toValue: 0, duration: 180, useNativeDriver: true }),
+      Animated.timing(stepFade, { toValue: 1, duration: 180, useNativeDriver: true }),
+    ]).start();
+  }, [progressStep]);
 
   useEffect(() => {
     if (!visible) return;
-    setStepIndex(0);
+    setTipIndex(0);
+    progressAnim.setValue(0);
+    prevStep.current = '';
 
     Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
-    const pulse = Animated.loop(
+    // Dicas rotacionam independentemente da IA, a cada 4s
+    const tipInterval = setInterval(() => {
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.15, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-      ])
-    );
-    pulse.start();
-
-    const interval = setInterval(() => {
-      Animated.sequence([
-        Animated.timing(textFade, { toValue: 0, duration: 250, useNativeDriver: true }),
-        Animated.timing(textFade, { toValue: 1, duration: 250, useNativeDriver: true }),
+        Animated.timing(tipFade, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(tipFade, { toValue: 1, duration: 300, useNativeDriver: true }),
       ]).start();
-      setStepIndex(i => (i + 1) % LOADING_STEPS.length);
-    }, 2200);
+      setTipIndex(i => (i + 1) % LEGAL_TIPS.length);
+    }, 4000);
 
     return () => {
-      pulse.stop();
-      clearInterval(interval);
+      clearInterval(tipInterval);
       fadeAnim.setValue(0);
-      pulseAnim.setValue(1);
-      textFade.setValue(1);
+      stepFade.setValue(1);
+      tipFade.setValue(1);
+      progressAnim.setValue(0);
     };
   }, [visible]);
 
   if (!visible) return null;
 
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
   return (
     <Modal transparent animationType="none" statusBarTranslucent>
       <Animated.View style={[loadingStyles.backdrop, { opacity: fadeAnim }]}>
         <View style={[loadingStyles.card, { backgroundColor: C.surface }]}>
-          <Animated.View style={[loadingStyles.iconWrap, { transform: [{ scale: pulseAnim }] }]}>
-            <ActivityIndicator color={C.accent} size="large" />
-          </Animated.View>
-          <Text style={[loadingStyles.title, { color: C.text1 }]}>Analisando contrato</Text>
-          <Animated.Text style={[loadingStyles.step, { color: C.accent, opacity: textFade }]}>
-            {LOADING_STEPS[stepIndex]}
+
+          {/* Ícone + título */}
+          <View style={loadingStyles.header}>
+            <View style={[loadingStyles.iconCircle, { backgroundColor: C.accent + '18' }]}>
+              <Ionicons name="document-text-outline" size={28} color={C.accent} />
+            </View>
+            <Text style={[loadingStyles.title, { color: C.text1 }]}>Analisando contrato</Text>
+          </View>
+
+          {/* Barra de progresso real */}
+          <View style={[loadingStyles.progressTrack, { backgroundColor: C.border }]}>
+            <Animated.View
+              style={[loadingStyles.progressFill, { backgroundColor: C.accent, width: progressWidth }]}
+            />
+          </View>
+
+          {/* Passo atual com fade */}
+          <Animated.Text style={[loadingStyles.step, { color: C.accent, opacity: stepFade }]}>
+            {progressStep || 'Lendo o contrato…'}
           </Animated.Text>
-          <Text style={[loadingStyles.hint, { color: C.text4 }]}>Isso pode levar alguns segundos</Text>
+
+          {/* Separador */}
+          <View style={[loadingStyles.divider, { backgroundColor: C.border }]} />
+
+          {/* Dica jurídica */}
+          <View style={loadingStyles.tipContainer}>
+            <Text style={[loadingStyles.tipLabel, { color: C.text3 }]}>💡 Você sabia?</Text>
+            <Animated.Text style={[loadingStyles.tipText, { color: C.text2, opacity: tipFade }]}>
+              {LEGAL_TIPS[tipIndex]}
+            </Animated.Text>
+          </View>
+
         </View>
       </Animated.View>
     </Modal>
@@ -85,45 +148,80 @@ function AnalysisLoadingOverlay({ visible, C }: { visible: boolean; C: any }) {
 const loadingStyles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 24,
   },
   card: {
     borderRadius: 20,
-    paddingHorizontal: 36,
-    paddingVertical: 36,
-    alignItems: 'center',
-    width: 280,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    width: '100%',
+    maxWidth: 340,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
   },
-  iconWrap: {
+  header: {
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   title: {
     fontFamily: F.display,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 10,
     textAlign: 'center',
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    width: '100%',
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 6,
+    borderRadius: 3,
   },
   step: {
     fontFamily: F.body,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     textAlign: 'center',
-    marginBottom: 8,
-    minHeight: 20,
+    minHeight: 18,
+    marginBottom: 20,
   },
-  hint: {
+  divider: {
+    height: 1,
+    width: '100%',
+    marginBottom: 16,
+  },
+  tipContainer: {
+    gap: 6,
+  },
+  tipLabel: {
     fontFamily: F.body,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  tipText: {
+    fontFamily: F.body,
+    fontSize: 13,
+    lineHeight: 19,
+    minHeight: 38,
   },
 });
 
@@ -142,6 +240,8 @@ export function NovaAnaliseScreen({ navigation }: Props) {
   const [pdfBase64, setPdfBase64] = useState<string | null>(null);
   const [titulo, setTitulo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [analysisPct, setAnalysisPct] = useState(0);
+  const [analysisStep, setAnalysisStep] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   function abrirOpcoesFoto() {
@@ -227,17 +327,23 @@ export function NovaAnaliseScreen({ navigation }: Props) {
     if (modo === 'texto' && texto.trim().length < 50) { Alert.alert('Atenção', 'Cole o texto (mínimo 50 caracteres).'); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
+    setAnalysisPct(0);
+    setAnalysisStep('');
+    const onProgress: ProgressCallback = (pct, step) => {
+      setAnalysisPct(pct);
+      setAnalysisStep(step);
+    };
     try {
       let report;
       if (modo === 'foto' && imagemUris.length > 0) {
         const base64Images = await Promise.all(
           imagemUris.map(uri => FileSystem.readAsStringAsync(uri, { encoding: 'base64' }))
         );
-        report = await analyzeContractImages(base64Images);
+        report = await analyzeContractImages(base64Images, onProgress);
       } else if (modo === 'pdf' && pdfBase64) {
-        report = await analyzeContractPDF(pdfBase64);
+        report = await analyzeContractPDF(pdfBase64, onProgress);
       } else {
-        report = await analyzeContractText(texto);
+        report = await analyzeContractText(texto, onProgress);
       }
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase.from('analyses').insert({
@@ -261,7 +367,7 @@ export function NovaAnaliseScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: C.bg }]} edges={['bottom']}>
-      <AnalysisLoadingOverlay visible={loading} C={C} />
+      <AnalysisLoadingOverlay visible={loading} C={C} progressPct={analysisPct} progressStep={analysisStep} />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
