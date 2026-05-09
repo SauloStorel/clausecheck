@@ -337,10 +337,6 @@ export async function exportReportPDF(
   return { uri, fileName };
 }
 
-export async function savePDF(uri: string, fileName: string): Promise<void> {
-  const dest = FileSystem.documentDirectory + fileName;
-  await FileSystem.copyAsync({ from: uri, to: dest });
-}
 
 export async function sharePDF(uri: string): Promise<void> {
   await shareAsync(uri, {

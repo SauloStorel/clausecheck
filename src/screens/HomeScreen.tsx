@@ -47,7 +47,7 @@ type Props = {
 };
 
 export function HomeScreen({ navigation }: Props) {
-  const { C, isDark } = useTheme();
+  const { C } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
