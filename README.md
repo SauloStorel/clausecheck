@@ -88,15 +88,22 @@ Row Level Security ativado: cada usuário acessa apenas seus próprios dados.
 
 ## ⚙️ Instalação e Execução
 
-### Pré-requisitos
-- Node.js 18+
-- Expo CLI (`npm install -g expo-cli`) ou Expo Go instalado no celular ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) / [iOS](https://apps.apple.com/app/expo-go/id982107779))
-- Conta no [Supabase](https://supabase.com/) (gratuita)
-- Chave de API da [Anthropic](https://console.anthropic.com/) (apenas para configurar Edge Functions)
+### O que você precisa instalar
+
+| Ferramenta | Versão mínima | Como instalar |
+|---|---|---|
+| [Node.js](https://nodejs.org/) | 18+ | Download no site oficial ou via `nvm` |
+| [npm](https://www.npmjs.com/) | Incluso no Node.js | — |
+| [Supabase CLI](https://supabase.com/docs/guides/cli) | Última | `npm install -g supabase` |
+| [Expo Go](https://expo.dev/go) | Última | App Store / Google Play no celular |
+
+Além disso, você precisa ter:
+- Conta gratuita no [Supabase](https://supabase.com/)
+- Chave de API da [Anthropic](https://console.anthropic.com/) para as Edge Functions
+
+---
 
 ### 1. Clonar o repositório
-
-> **Importante:** clone usando HTTPS (não SSH) para evitar problemas de autenticação.
 
 ```bash
 git clone https://github.com/SauloStorel/clausecheck.git
@@ -104,11 +111,25 @@ cd clausecheck
 ```
 
 ### 2. Instalar dependências
+
 ```bash
 npm install
 ```
 
-### 3. Configurar o Supabase
+### 3. Configurar variáveis de ambiente
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env` com as credenciais do seu projeto Supabase (encontradas em **Project Settings → API**):
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
+```
+
+### 4. Criar as tabelas no Supabase
 
 Acesse seu projeto no Supabase → **SQL Editor** e execute:
 
@@ -141,27 +162,34 @@ create policy "user_messages" on messages for all using (
 );
 ```
 
-### 4. Configurar variáveis de ambiente
+### 5. Fazer deploy das Edge Functions
+
+As Edge Functions ficam na pasta `supabase/functions/` e são responsáveis por chamar a API da Anthropic com segurança (a chave nunca fica exposta no app).
+
+**5.1 — Login no Supabase CLI**
 ```bash
-cp .env.example .env
+supabase login
 ```
 
-Edite o arquivo `.env` com suas credenciais:
-```env
-EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
+**5.2 — Vincular ao seu projeto**
+```bash
+supabase link --project-ref SEU_PROJECT_REF
+```
+> O `PROJECT_REF` está na URL do seu projeto: `https://supabase.com/dashboard/project/SEU_PROJECT_REF`
+
+**5.3 — Configurar a chave da Anthropic como secret**
+```bash
+supabase secrets set ANTHROPIC_API_KEY=sua-chave-anthropic
 ```
 
-**Configurar a API Anthropic nas Edge Functions:**
+**5.4 — Fazer o deploy das funções**
+```bash
+supabase functions deploy analyze-contract
+supabase functions deploy chat-contract
+```
 
-1. Vá para seu projeto no Supabase
-2. Acesse **Edge Functions** → crie a função `analyze-contract` e `chat-contract`
-3. Configure a chave da API Anthropic como **variável de ambiente** nas Edge Functions
-4. As requisições do app são feitas para as Edge Functions (mais seguro que expor a chave no cliente)
+### 6. Rodar o app
 
-> As chaves do Supabase estão em: **Project Settings → API**
-
-### 5. Rodar o app
 ```bash
 npx expo start
 ```
