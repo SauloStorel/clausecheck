@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Report, Message } from '../types';
+import { Report } from '../types';
 
 export type ProgressCallback = (pct: number, step: string) => void;
 

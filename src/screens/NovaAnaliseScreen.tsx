@@ -17,13 +17,6 @@ import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
 import { RootStackParamList } from '../types';
 
-const LOADING_STEPS = [
-  'Lendo o contrato…',
-  'Identificando cláusulas…',
-  'Avaliando riscos jurídicos…',
-  'Verificando base legal…',
-  'Preparando o relatório…',
-];
 
 const LEGAL_TIPS = [
   'Multas contratuais acima de 10% do valor total podem ser contestadas judicialmente.',
@@ -310,13 +303,11 @@ export function NovaAnaliseScreen({ navigation }: Props) {
         Alert.alert('Arquivo muito grande', 'O PDF deve ter no máximo 10MB.');
         return;
       }
-      console.log('PDF URI:', asset.uri);
       const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
       setPdfNome(asset.name);
       setPdfBase64(base64);
       if (!titulo) setTitulo(asset.name.replace('.pdf', ''));
     } catch (err: any) {
-      console.error('Erro ao ler PDF:', err);
       Alert.alert('Erro ao ler PDF', err?.message || 'Não foi possível ler o arquivo PDF. Verifique as permissões do dispositivo.');
     }
   }
