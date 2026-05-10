@@ -1,16 +1,25 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { searchLegalContext } from '../_shared/rag.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'claude-opus-4-6';
 
-const SYSTEM_PROMPT = `Analise o contrato e retorne SOMENTE JSON válido, sem texto extra:
+const BASE_SYSTEM_PROMPT = `Analise o contrato e retorne SOMENTE JSON válido, sem texto extra:
 {"risk_level":"high"|"medium"|"low","summary":"2 frases diretas","clauses":[{"id":"slug-curto","risk":"high"|"medium"|"low","title":"até 6 palavras","explanation":"(1) O QUE É: 1 frase. (2) IMPACTO: 1-2 frases. (3) ATENÇÃO: 1 frase.","affects_both_parties":true,"severity_note":"só para high, 1 frase"}],"recommendations":["até 10 palavras"]}
 REGRAS: CC/2002 como base. Omita cláusulas triviais. Máx 8 cláusulas. Linguagem neutra. high=ilegal/abusiva, medium=atenção, low=normal.`;
+
+function buildSystemPrompt(legalContext: string): string {
+  if (!legalContext) return BASE_SYSTEM_PROMPT;
+  return `${BASE_SYSTEM_PROMPT}
+
+LEGISLAÇÃO RELEVANTE RECUPERADA (use como referência na análise):
+${legalContext}`;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -69,15 +78,29 @@ serve(async (req) => {
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY não configurada');
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model: MODEL, max_tokens: 2500, system: SYSTEM_PROMPT, messages }),
-    });
+    // Busca contexto legal relevante via RAG (falha silenciosa)
+    const queryText = mode === 'text' ? (payload as string) : 'análise de contrato';
+    const legalContext = await searchLegalContext(supabase, queryText);
+    const systemPrompt = buildSystemPrompt(legalContext);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 140_000); // 140s
+
+    let res: Response;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({ model: MODEL, max_tokens: 2500, system: systemPrompt, messages }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!res.ok) {
       const err = await res.text();

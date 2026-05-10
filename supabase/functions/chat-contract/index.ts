@@ -1,19 +1,23 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { searchLegalContext } from '../_shared/rag.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'claude-opus-4-6';
 
-function chatSystemPrompt(contractText: string): string {
+function chatSystemPrompt(contractText: string, legalContext: string): string {
+  const contextBlock = legalContext
+    ? `\nLEGISLAÇÃO RELEVANTE RECUPERADA (use para fundamentar sua resposta):\n${legalContext}\n`
+    : '';
   return `Você é um advogado acessível e empático que ajuda pessoas comuns a entender seus contratos.
 Você está analisando o seguinte contrato:
 ---
 ${contractText}
----
+---${contextBlock}
 NEUTRALIDADE: Não assuma o papel do usuário no contrato. Explique como a cláusula afeta diferentes partes.
 BASE LEGAL: Fundamente-se no Código Civil de 2002 (CC/2002). Cite artigos específicos quando relevante.
 LIMITE: Até 5 parágrafos. Linguagem simples, nunca jargão incompreensível.
@@ -73,6 +77,9 @@ serve(async (req) => {
 
     const { contractText, history, userMessage } = await req.json();
 
+    // Busca contexto legal baseado na pergunta do usuário (falha silenciosa)
+    const legalContext = await searchLegalContext(supabase, userMessage);
+
     const messages = [
       ...(history ?? []).map((m: { role: string; content: string }) => ({
         role: m.role as 'user' | 'assistant',
@@ -83,8 +90,8 @@ serve(async (req) => {
 
     const reply = await callAnthropic({
       model: MODEL,
-      max_tokens: 1024,
-      system: chatSystemPrompt(contractText ?? ''),
+      max_tokens: 8000,
+      system: chatSystemPrompt(contractText ?? '', legalContext),
       messages,
     });
 
