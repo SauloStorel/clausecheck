@@ -237,6 +237,7 @@ const styles = StyleSheet.create({
   themeCards: {
     flexDirection: 'row',
     gap: 16,
+    alignSelf: 'stretch',
   },
   themeCard: {
     flex: 1,

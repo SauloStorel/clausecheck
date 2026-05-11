@@ -21,6 +21,7 @@ export function LoginScreen({ navigation }: Props) {
   const styles = useMemo(() => makeStyles(C), [C]);
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [modo, setModo] = useState<'login' | 'cadastro'>('login');
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -40,9 +41,32 @@ export function LoginScreen({ navigation }: Props) {
     checkOnboarding();
   }, []);
 
+  function traduzirErroAuth(mensagem: string): string {
+    const tabela: Record<string, string> = {
+      'Invalid login credentials': 'E-mail ou senha inválidos.',
+      'invalid login credentials': 'E-mail ou senha inválidos.',
+      'Email not confirmed': 'Confirme seu e-mail antes de entrar.',
+      'User already registered': 'Este e-mail já está cadastrado.',
+      'Password should be at least 6 characters': 'A senha deve ter pelo menos 6 caracteres.',
+      'Unable to validate email address: invalid format': 'Formato de e-mail inválido.',
+      'signup is disabled': 'Cadastro desabilitado no momento. Tente mais tarde.',
+      'email rate limit exceeded': 'Muitas tentativas. Aguarde alguns minutos.',
+      'For security purposes, you can only request this after': 'Por segurança, aguarde antes de tentar novamente.',
+    };
+    for (const [chave, traducao] of Object.entries(tabela)) {
+      if (mensagem.toLowerCase().includes(chave.toLowerCase())) return traducao;
+    }
+    return 'Ocorreu um erro. Tente novamente.';
+  }
+
   async function handleAuth() {
     setError('');
     if (!email || !senha) { setError('Preencha e-mail e senha.'); return; }
+
+    if (modo === 'cadastro') {
+      if (senha.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return; }
+      if (senha !== confirmarSenha) { setError('As senhas não coincidem.'); return; }
+    }
 
     setLoading(true);
     try {
@@ -59,7 +83,7 @@ export function LoginScreen({ navigation }: Props) {
       }
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setError(err.message ?? 'Tente novamente.');
+      setError(traduzirErroAuth(err.message ?? ''));
     } finally {
       setLoading(false);
     }
@@ -119,6 +143,29 @@ export function LoginScreen({ navigation }: Props) {
               />
             </View>
 
+            {!isLogin && (
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Confirmar senha</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    focusedField === 'confirmarSenha' && styles.inputFocused,
+                    confirmarSenha.length > 0 && senha !== confirmarSenha && styles.inputError,
+                  ]}
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                  secureTextEntry
+                  placeholderTextColor={C.text3}
+                  placeholder="Repita a senha"
+                  onFocus={() => setFocusedField('confirmarSenha')}
+                  onBlur={() => setFocusedField(null)}
+                />
+                {confirmarSenha.length > 0 && senha !== confirmarSenha && (
+                  <Text style={styles.fieldError}>As senhas não coincidem.</Text>
+                )}
+              </View>
+            )}
+
             {error !== '' && (
               <Text
                 style={styles.errorText}
@@ -145,7 +192,7 @@ export function LoginScreen({ navigation }: Props) {
 
             <TouchableOpacity
               style={styles.toggle}
-              onPress={() => { setError(''); setModo(m => m === 'login' ? 'cadastro' : 'login'); }}
+              onPress={() => { setError(''); setConfirmarSenha(''); setModo(m => m === 'login' ? 'cadastro' : 'login'); }}
             >
               <Text style={styles.toggleText}>
                 {isLogin ? 'Não tem conta? ' : 'Já tem conta? '}
@@ -221,6 +268,15 @@ function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTh
     inputFocused: {
       borderColor: C.accent,
       backgroundColor: C.surface,
+    },
+    inputError: {
+      borderColor: C.danger,
+    },
+    fieldError: {
+      fontFamily: F.body,
+      color: C.danger,
+      fontSize: 12,
+      marginTop: 2,
     },
     errorText: {
       fontFamily: F.body,
