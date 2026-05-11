@@ -50,3 +50,5 @@ supabase/.temp/
 .agents/
 .specs/
 .docs/
+# Added by code-review-graph
+.code-review-graph/
