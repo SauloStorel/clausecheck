@@ -37,24 +37,63 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 
 ## 🛠️ Tecnologias Utilizadas
 
+### Core Framework
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
-| [React Native](https://reactnative.dev/) | 0.81.5 | Framework mobile |
-| [Expo](https://expo.dev/) | 54.0.0 | Toolchain e build |
-| [React Navigation](https://reactnavigation.org/) | 7.2.2 | Navegação entre telas |
-| [React](https://react.dev/) | 19.1.0 | Biblioteca de UI |
-| [TypeScript](https://www.typescriptlang.org/) | 5.9.2 | Tipagem estática |
-| [Supabase](https://supabase.com/) | 2.105.3 | Autenticação, banco de dados, Edge Functions e vetores |
-| [pgvector](https://github.com/pgvector/pgvector) | extensão Postgres | Busca por similaridade vetorial (RAG) |
-| [Anthropic Claude API](https://www.anthropic.com/) | claude-opus-4-6 | Análise de contratos e chat jurídico com IA |
-| [Voyage AI](https://www.voyageai.com/) | voyage-law-2 | Geração de embeddings especializados em direito |
+| [React Native](https://reactnative.dev/) | 0.81.5 | Framework mobile multiplataforma |
+| [Expo](https://expo.dev/) | 54.0.0 | Toolchain, build e gerenciamento de assets |
+| [React](https://react.dev/) | 19.1.0 | Biblioteca de componentes de UI |
+| [TypeScript](https://www.typescriptlang.org/) | 5.9.2 | Tipagem estática e segurança de tipos |
+
+### Navegação e Interface
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [React Navigation](https://reactnavigation.org/) | 7.2.2 | Stack navigation entre telas |
+| [react-native-gesture-handler](https://github.com/software-mansion/react-native-gesture-handler) | 2.28.0 | Gestos customizados (swipe, tap) |
+| [react-native-screens](https://github.com/software-mansion/react-native-screens) | 4.16.0 | Otimização nativa de telas |
+| [react-native-safe-area-context](https://github.com/th3rdwave/react-native-safe-area-context) | 5.6.0 | Contorno de notches e bordas seguras |
+| [@expo/vector-icons](https://docs.expo.dev/guides/icons/) | 15.0.3 | Ícones Material Design e Feather |
 | [@ronradtke/react-native-markdown-display](https://github.com/ronradtke/react-native-markdown-display) | 8.1.0 | Renderização de markdown nas respostas da IA |
-| [expo-image-picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) | 17.0.11 | Câmera e galeria para captura de contrato |
-| [expo-file-system](https://docs.expo.dev/versions/latest/sdk/filesystem/) | 19.0.22 | Acesso ao sistema de arquivos |
-| [expo-document-picker](https://docs.expo.dev/versions/latest/sdk/documentpicker/) | 14.0.8 | Seletor de PDFs |
-| [expo-sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) | 14.0.8 | Compartilhamento do relatório |
-| [expo-print](https://docs.expo.dev/versions/latest/sdk/print/) | 15.0.8 | Geração de PDF do relatório |
+
+### Backend e Autenticação
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [Supabase](https://supabase.com/) | 2.105.3 | Autenticação, banco de dados, Edge Functions e vetores |
+| [@react-native-async-storage/async-storage](https://github.com/react-native-async-storage/async-storage) | 2.2.0 | Armazenamento local de dados (sessões, cache) |
+
+### IA e RAG
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [Anthropic Claude API](https://www.anthropic.com/) | claude-opus-4-6 | Análise de contratos e chat jurídico com IA |
+| [Voyage AI](https://www.voyageai.com/) | voyage-law-2 | Geração de embeddings especializados em textos jurídicos |
+| [pgvector](https://github.com/pgvector/pgvector) | extensão Postgres | Busca por similaridade vetorial para RAG |
+
+### Capture e Processamento de Documentos
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [expo-image-picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) | 17.0.11 | Câmera e galeria para captura de contratos |
+| [expo-document-picker](https://docs.expo.dev/versions/latest/sdk/documentpicker/) | 14.0.8 | Seletor nativo de arquivos PDF |
+| [expo-file-system](https://docs.expo.dev/versions/latest/sdk/filesystem/) | 19.0.22 | Acesso ao sistema de arquivos do dispositivo |
+
+### Exportação e Compartilhamento
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [expo-print](https://docs.expo.dev/versions/latest/sdk/print/) | 15.0.8 | Geração e impressão de PDF do relatório |
+| [expo-sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) | 14.0.8 | Compartilhamento de relatórios via apps |
+
+### Feedback e UX
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
 | [expo-haptics](https://docs.expo.dev/versions/latest/sdk/haptics/) | 15.0.8 | Feedback tátil nas interações |
+| [expo-status-bar](https://docs.expo.dev/versions/latest/sdk/statusbar/) | 3.0.9 | Controle da barra de status (iOS/Android) |
+| [expo-font](https://docs.expo.dev/versions/latest/sdk/font/) | 14.0.11 | Carregamento de fontes customizadas |
+
+### Compatibilidade
+| Tecnologia | Versão | Finalidade |
+|---|---|---|
+| [react-native-url-polyfill](https://github.com/react-native-community/url-polyfill) | 3.0.0 | Polyfill de URL para compatibilidade |
+| [react-native-web](https://necolas.github.io/react-native-web/) | 0.21.0 | Suporte para compilação web (futuro) |
+| [react-native-webview](https://github.com/react-native-webview/react-native-webview) | 13.15.0 | Visualização de conteúdo web embarcado |
 
 ---
 
@@ -72,6 +111,16 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | `ActivityIndicator` | Loading durante análise e busca de dados |
 | **Flexbox Layout** | Layout responsivo em todas as telas |
 | **React Navigation Stack** | 9 telas conectadas com roteamento e animações |
+| **Animated** | Animações suaves (entrada de componentes, transições) |
+
+---
+
+## 🎪 Custom Hooks Utilizados
+
+| Hook | Localização | Função |
+|---|---|---|
+| `useEntrance` | `src/hooks/useEntrance.ts` | Animação de entrada (fade + slide up) para componentes com delay customizável |
+| `useTheme` | `src/context/ThemeContext.tsx` | Acesso ao contexto de tema (claro/escuro) e paleta de cores |
 
 ---
 
@@ -212,9 +261,12 @@ cp .env.example .env
 Edite o `.env` com as credenciais do seu projeto Supabase (encontradas em **Project Settings → API**):
 
 ```env
+# Supabase API (obrigatório para o app rodar)
 EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key-aqui
 ```
+
+⚠️ **Nota:** As credenciais das APIs (Anthropic e Voyage) são configuradas como **secrets** nas Edge Functions do Supabase (veja passo 5.3), não no `.env` do cliente.
 
 ### 4. Criar as tabelas no Supabase
 
@@ -293,6 +345,38 @@ Escaneie o QR Code com o **Expo Go** no celular.
 
 ---
 
+## ⚙️ Configuração do Expo (`app.json`)
+
+O arquivo `app.json` contém metadados cruciais do app:
+
+```json
+{
+  "expo": {
+    "name": "clausecheck",
+    "slug": "clausecheck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "newArchEnabled": true,  // 🔧 Nova Arquitetura do React Native
+    "icon": "./assets/icon.png",
+    "splash": { "image": "./assets/splash-icon.png" },
+    "ios": { "supportsTablet": true },
+    "android": {
+      "package": "com.anonymous.clausecheck",
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png" }
+    },
+    "plugins": ["expo-font"]  // 📦 Plugins: carregamento de fontes customizadas
+  }
+}
+```
+
+**`newArchEnabled: true`** — Ativa a New Architecture do React Native:
+- Usa Fabric (novo sistema de renderização) em vez de ponte JavaScript
+- Oferece melhor performance e suporte a concorrência
+- Compatível com Expo SDK 54+
+
+---
+
 ## 📲 Telas do Aplicativo — Screenshots
 
 <table>
@@ -327,6 +411,19 @@ Escaneie o QR Code com o **Expo Go** no celular.
 
 ---
 
+## 📦 Tipos TypeScript Principais
+
+| Tipo | Localização | Descrição |
+|---|---|---|
+| `Analysis` | `src/types/index.ts` | Representa uma análise completa (ID, usuário, relatório, risco) |
+| `Report` | `src/types/index.ts` | Estrutura do relatório (resumo, cláusulas, recomendações) |
+| `Clause` | `src/types/index.ts` | Cláusula individual com risco, título, explicação |
+| `RiskLevel` | `src/types/index.ts` | Union type: `'high' \| 'medium' \| 'low'` |
+| `Message` | `src/types/index.ts` | Mensagem do chat (role: user/assistant, conteúdo, timestamp) |
+| `RootStackParamList` | `src/types/index.ts` | Tipos de params para React Navigation |
+
+---
+
 ## 🏗️ Estrutura do Projeto
 
 ```
@@ -348,31 +445,78 @@ clausecheck/
 │   │   ├── MessageBubble.tsx      # Bolha de mensagem do chat
 │   │   ├── AnalysisItem.tsx       # Item da lista de histórico
 │   │   └── SwipeableAnalysisItem.tsx # Item com swipe para excluir
+│   ├── hooks/
+│   │   └── useEntrance.ts         # Hook de animação de entrada (fade + slide)
 │   ├── services/
 │   │   ├── supabase.ts            # Cliente Supabase (auth, DB)
-│   │   ├── claude.ts              # Integração com Edge Functions
-│   │   └── pdf.ts                 # Geração e leitura de PDF
+│   │   ├── claude.ts              # Integração com Edge Functions (análise e chat)
+│   │   ├── pdf.ts                 # Geração e renderização de PDF
+│   │   └── pdfCache.ts            # Cache em memória de PDFs renderizados
 │   ├── context/
-│   │   └── ThemeContext.tsx       # Contexto de tema claro/escuro
+│   │   └── ThemeContext.tsx       # Contexto de tema claro/escuro + paleta de cores
 │   ├── constants/
-│   │   ├── theme.ts               # Sistema de cores e tipografia
-│   │   └── prompts.ts             # Prompts do sistema para a IA
+│   │   ├── theme.ts               # Tokens de design: cores, tipografia, spacing
+│   │   └── prompts.ts             # Prompts do sistema enviados para Claude API
 │   └── types/
-│       └── index.ts               # Tipos TypeScript globais
+│       └── index.ts               # Tipos TypeScript globais (Analysis, Report, Clause)
 ├── supabase/
 │   ├── functions/
 │   │   ├── analyze-contract/      # Edge Function: análise de contrato com RAG
 │   │   ├── chat-contract/         # Edge Function: chat jurídico com RAG
 │   │   ├── ingest-documents/      # Edge Function: ingestão de legislação
 │   │   └── _shared/
-│   │       └── rag.ts             # Módulo compartilhado: embeddings e busca vetorial
+│   │       └── rag.ts             # Módulo compartilhado: embeddings + busca vetorial
 │   └── migrations/
 │       └── 20260510000000_rag_setup.sql  # Migração: pgvector + legal_chunks
-├── App.tsx                        # Navegação e configuração principal
-├── .env.example                   # Modelo de variáveis de ambiente
-├── package.json                   # Dependências do projeto
-└── README.md
+├── assets/
+│   ├── screenshots/               # Screenshots das telas
+│   ├── icon.png                   # Ícone do app
+│   ├── splash-icon.png            # Splash screen
+│   ├── adaptive-icon.png          # Ícone adaptativo Android
+│   └── favicon.png                # Favicon web
+├── App.tsx                        # Navegação stack e configuração de tema
+├── app.json                       # Configuração do Expo (nome, versão, ícones, plugins)
+├── .env.example                   # Template de variáveis de ambiente
+├── .env                           # Variáveis de ambiente (não commitar)
+├── .gitignore                     # Arquivos ignorados pelo Git
+├── tsconfig.json                  # Configuração do TypeScript
+├── package.json                   # Dependências e scripts
+└── README.md                      # Este arquivo
 ```
+
+---
+
+## 💾 Serviços e Utilitários
+
+### **pdf.ts** — Geração e Renderização de PDF
+- `buildReportHTML()` — Converte o relatório para HTML formatado
+- `generatePDFUri()` — Gera PDF do relatório usando `expo-print`
+- `sharePDF()` — Compartilha PDF via `expo-sharing`
+
+### **pdfCache.ts** — Cache em Memória de PDFs
+- `primeCache()` — Pré-renderiza e cacheа HTML do PDF (otimização)
+- `getCachedHTML()` — Retorna HTML em cache se disponível
+- `getCachedAnalysis()` — Retorna dados da análise em cache
+- **Por quê:** Evita re-renderização desnecessária ao navegar entre telas
+
+### **claude.ts** — Integração com Edge Functions
+- `analyzeContract()` — Envia contrato (texto/imagem/PDF) para análise
+- `chatWithContract()` — Envia pergunta para chat contextual
+
+### **supabase.ts** — Cliente Supabase
+- Instância pre-configurada com URL e chave de API
+- Autenticação, banco de dados e Edge Functions
+
+---
+
+## 🧠 Sistema de Prompts
+
+O arquivo `src/constants/prompts.ts` define os prompts enviados para Claude, incluindo:
+- Prompt de análise de cláusulas com classificação de risco
+- Contexto jurídico injetado via RAG (Código Civil, CDC, CLT)
+- Instruções para gerar respostas em JSON estruturado
+
+Os prompts são críticos para a qualidade das análises — mudanças aqui impactam diretamente a precisão do AI.
 
 ---
 
