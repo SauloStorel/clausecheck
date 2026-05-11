@@ -98,7 +98,7 @@ export function RelatorioScreen({ navigation, route }: Props) {
           <View style={styles.counters}>
             {RISK_COUNTERS.map(({ risk, label, icon }) => (
               <View key={risk} style={[styles.counter, { opacity: counts[risk] === 0 ? 0.35 : 1 }]}>
-                <Ionicons name={icon as any} size={16} color={riskColors[risk].fg} />
+                <Ionicons name={icon as any} size={18} color={riskColors[risk].fg} />
                 <Text style={[styles.counterNum, { color: riskColors[risk].fg }]}>{counts[risk]}</Text>
                 <Text style={[styles.counterLabel, { color: C.text3 }]}>{label}</Text>
               </View>
@@ -218,21 +218,22 @@ function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTh
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 0,
       backgroundColor: C.surface,
       borderRadius: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
     },
     counterNum: {
       fontFamily: F.display,
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: '700',
+      minWidth: 20,
     },
     counterLabel: {
       fontFamily: F.body,
       fontSize: 11,
-      flexShrink: 1,
+      color: C.text3,
     },
     titleBlock: {
       paddingHorizontal: 4,
