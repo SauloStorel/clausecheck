@@ -223,6 +223,12 @@ type Modo = 'foto' | 'pdf' | 'texto';
 
 const MAX_IMAGES = 5;
 
+const MODOS: { id: Modo; icon: React.ComponentProps<typeof Ionicons>['name']; label: string }[] = [
+  { id: 'foto',  icon: 'camera-outline',        label: 'Câmera' },
+  { id: 'pdf',   icon: 'document-text-outline', label: 'PDF'    },
+  { id: 'texto', icon: 'text-outline',          label: 'Texto'  },
+];
+
 export function NovaAnaliseScreen({ navigation }: Props) {
   const { C } = useTheme();
   const styles = useMemo(() => makeStyles(C), [C]);
@@ -365,24 +371,21 @@ export function NovaAnaliseScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.segmented}>
-          {(['foto', 'pdf', 'texto'] as Modo[]).map(m => (
-            <TouchableOpacity
-              key={m}
-              style={[styles.segment, modo === m && styles.segmentActive]}
-              onPress={() => {
-                setModo(m);
-                setImagemUris([]);
-                setPdfBase64(null);
-                setTexto('');
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.segmentText, modo === m && styles.segmentTextActive]}>
-                {m === 'foto' ? 'Câmera' : m === 'pdf' ? 'PDF' : 'Texto'}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.modeCards}>
+          {MODOS.map(m => {
+            const active = modo === m.id;
+            return (
+              <TouchableOpacity
+                key={m.id}
+                style={[styles.modeCard, active && styles.modeCardActive]}
+                onPress={() => { setModo(m.id); setImagemUris([]); setPdfBase64(null); setTexto(''); }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={m.icon} size={26} color={active ? C.accent : C.text3} style={styles.modeIcon} />
+                <Text style={[styles.modeLabel, active && styles.modeLabelActive]}>{m.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {modo === 'foto' ? (
@@ -501,34 +504,38 @@ function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTh
       paddingTop: 16,
       paddingBottom: 40,
     },
-    segmented: {
+    modeCards: {
       flexDirection: 'row',
-      backgroundColor: C.borderStrong,
-      borderRadius: 9,
-      padding: 2,
-      marginBottom: 20,
+      gap: 10,
+      marginBottom: 24,
     },
-    segment: {
+    modeCard: {
       flex: 1,
-      paddingVertical: 8,
-      alignItems: 'center',
-      borderRadius: 7,
-    },
-    segmentActive: {
       backgroundColor: C.surface,
-      shadowColor: '#000',
-      shadowOpacity: 0.08,
-      shadowRadius: 2,
-      shadowOffset: { width: 0, height: 1 },
-      elevation: 1,
+      borderRadius: 14,
+      paddingVertical: 16,
+      paddingHorizontal: 8,
+      alignItems: 'center',
+      borderWidth: 1.5,
+      borderColor: C.border,
+      gap: 4,
     },
-    segmentText: {
+    modeCardActive: {
+      borderColor: C.accent,
+      backgroundColor: C.accentSoft,
+    },
+    modeIcon: {
+      marginBottom: 2,
+    },
+    modeLabel: {
       fontFamily: F.body,
-      fontSize: 14,
+      fontSize: 13,
+      fontWeight: '600',
       color: C.text2,
-      fontWeight: '500',
     },
-    segmentTextActive: { color: C.text1, fontWeight: '600' },
+    modeLabelActive: {
+      color: C.accent,
+    },
     uploadBtn: {
       backgroundColor: C.surface,
       borderRadius: 12,

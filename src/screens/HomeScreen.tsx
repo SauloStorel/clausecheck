@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -141,6 +142,23 @@ export function HomeScreen({ navigation }: Props) {
         )}
       </View>
 
+      {!loading && analyses.length > 0 && (
+        <TouchableOpacity
+          style={styles.newAnalysisCard}
+          onPress={() => navigation.navigate('NovaAnalise')}
+          activeOpacity={0.82}
+        >
+          <View style={styles.newAnalysisIcon}>
+            <Ionicons name="add" size={22} color={C.textInverse} />
+          </View>
+          <View style={styles.newAnalysisText}>
+            <Text style={styles.newAnalysisTitle}>Nova análise</Text>
+            <Text style={styles.newAnalysisSubtitle}>Câmera, PDF ou texto</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={C.textInverse} style={{ opacity: 0.7 }} />
+        </TouchableOpacity>
+      )}
+
       {loading ? (
         <ActivityIndicator color={C.accent} style={{ marginTop: 60 }} />
       ) : analyses.length === 0 ? (
@@ -178,6 +196,7 @@ export function HomeScreen({ navigation }: Props) {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           style={styles.listWrapper}
+          contentInset={{ bottom: 80 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -188,6 +207,14 @@ export function HomeScreen({ navigation }: Props) {
           }
         />
       )}
+
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: C.accent }]}
+        onPress={() => navigation.navigate('NovaAnalise')}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={28} color={C.textInverse} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -243,10 +270,58 @@ function makeStyles(C: ReturnType<typeof import('../context/ThemeContext').useTh
       color: C.text3,
       marginTop: 2,
     },
+    newAnalysisCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: C.accent,
+      borderRadius: 14,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      gap: 12,
+    },
+    newAnalysisIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    newAnalysisText: { flex: 1 },
+    newAnalysisTitle: {
+      fontFamily: F.body,
+      fontSize: 15,
+      fontWeight: '700',
+      color: C.textInverse,
+    },
+    newAnalysisSubtitle: {
+      fontFamily: F.body,
+      fontSize: 12,
+      color: C.textInverse,
+      opacity: 0.75,
+      marginTop: 1,
+    },
+    fab: {
+      position: 'absolute',
+      bottom: 24,
+      right: 20,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+    },
     listWrapper: { flex: 1 },
     list: {
       paddingTop: 8,
-      paddingBottom: 40,
+      paddingBottom: 100,
       paddingHorizontal: 16,
     },
     rowWrap: {
