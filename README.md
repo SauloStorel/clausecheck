@@ -237,6 +237,10 @@ Além disso, você precisa ter:
 - Chave de API da [Anthropic](https://console.anthropic.com/)
 - Chave de API da [Voyage AI](https://www.voyageai.com/) (para o RAG)
 
+**Versões mínimas de dispositivo:**
+- iOS 16+
+- Android 10 (API 29)+
+
 ---
 
 ### 1. Clonar o repositório
@@ -328,6 +332,8 @@ supabase secrets set VOYAGE_API_KEY=sua-chave-voyage
 supabase secrets set INGEST_SECRET=uma-senha-secreta-para-ingestao
 ```
 
+> `INGEST_SECRET` é uma senha que protege o endpoint da Edge Function `ingest-documents`, impedindo que qualquer pessoa acione a ingestão de documentos sem autorização. Escolha um valor longo e aleatório.
+
 **5.4 — Fazer o deploy das funções**
 ```bash
 supabase functions deploy analyze-contract
@@ -335,7 +341,21 @@ supabase functions deploy chat-contract
 supabase functions deploy ingest-documents
 ```
 
-### 6. Rodar o app
+### 6. Popular a base jurídica (RAG)
+
+Após o deploy das funções, envie os documentos jurídicos para indexação. A Edge Function `ingest-documents` processa os textos e gera os embeddings vetoriais:
+
+```bash
+curl -X POST https://SEU_PROJETO.supabase.co/functions/v1/ingest-documents \
+  -H "Authorization: Bearer SUA_ANON_KEY" \
+  -H "x-ingest-secret: SUA_INGEST_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"source": "CDC"}'
+```
+
+Repita para cada base (`CC2002`, `CDC`, `CLT`, `LeiInquilinato`). Este passo é necessário para que o RAG funcione — sem ele, as análises ainda funcionam, mas sem fundamentação legal.
+
+### 7. Rodar o app
 
 ```bash
 npx expo start
@@ -345,7 +365,7 @@ Escaneie o QR Code com o **Expo Go** no celular.
 
 ---
 
-## ⚙️ Configuração do Expo (`app.json`)
+## 🔧 Configuração do Expo (`app.json`)
 
 O arquivo `app.json` contém metadados cruciais do app:
 
@@ -356,7 +376,7 @@ O arquivo `app.json` contém metadados cruciais do app:
     "slug": "clausecheck",
     "version": "1.0.0",
     "orientation": "portrait",
-    "newArchEnabled": true,  // 🔧 Nova Arquitetura do React Native
+    "newArchEnabled": true,
     "icon": "./assets/icon.png",
     "splash": { "image": "./assets/splash-icon.png" },
     "ios": { "supportsTablet": true },
@@ -365,15 +385,15 @@ O arquivo `app.json` contém metadados cruciais do app:
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png" }
     },
-    "plugins": ["expo-font"]  // 📦 Plugins: carregamento de fontes customizadas
+    "plugins": ["expo-font"]
   }
 }
 ```
 
-**`newArchEnabled: true`** — Ativa a New Architecture do React Native:
-- Usa Fabric (novo sistema de renderização) em vez de ponte JavaScript
-- Oferece melhor performance e suporte a concorrência
-- Compatível com Expo SDK 54+
+> ⚠️ JSON não suporta comentários — o arquivo real não deve conter `//`. As notas abaixo explicam os campos relevantes:
+>
+> - **`newArchEnabled: true`** — Ativa a New Architecture do React Native (Fabric + JSI), com melhor performance e suporte a concorrência. Compatível com Expo SDK 54+.
+> - **`plugins: ["expo-font"]`** — Necessário para carregar fontes customizadas via `expo-font`.
 
 ---
 
@@ -494,7 +514,7 @@ clausecheck/
 - `sharePDF()` — Compartilha PDF via `expo-sharing`
 
 ### **pdfCache.ts** — Cache em Memória de PDFs
-- `primeCache()` — Pré-renderiza e cacheа HTML do PDF (otimização)
+- `primeCache()` — Pré-renderiza e cacheia HTML do PDF (otimização)
 - `getCachedHTML()` — Retorna HTML em cache se disponível
 - `getCachedAnalysis()` — Retorna dados da análise em cache
 - **Por quê:** Evita re-renderização desnecessária ao navegar entre telas
