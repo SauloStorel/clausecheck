@@ -273,7 +273,7 @@ export function NovaAnaliseScreen({ navigation }: Props) {
 
     const remaining = MAX_IMAGES - imagemUris.length;
     const options: ImagePicker.ImagePickerOptions = {
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'] as ImagePicker.MediaType[],
       quality: 0.6,
       allowsEditing: false,
       allowsMultipleSelection: origem === 'galeria',

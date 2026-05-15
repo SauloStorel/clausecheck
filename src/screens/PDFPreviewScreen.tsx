@@ -19,7 +19,7 @@ export function PDFPreviewScreen({ navigation, route }: Props) {
   const { analysisId } = route.params;
   const [sharing, setSharing] = useState(false);
 
-  const html     = getCachedHTML(analysisId) ?? '';
+  const html     = getCachedHTML(analysisId);
   const analysis = getCachedAnalysis(analysisId);
 
   async function handleShare() {
@@ -50,7 +50,15 @@ export function PDFPreviewScreen({ navigation, route }: Props) {
         </TouchableOpacity>
       ),
     });
-  }, [analysis, sharing]);
+  }, [analysis, sharing, navigation, C]);
+
+  if (!html) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={C.accent} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -66,6 +74,7 @@ export function PDFPreviewScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
+  centered:  { justifyContent: 'center', alignItems: 'center' },
   webview: { flex: 1 },
   headerButton: { marginRight: 16, padding: 4 },
 });

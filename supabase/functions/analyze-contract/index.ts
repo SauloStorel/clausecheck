@@ -54,10 +54,15 @@ serve(async (req) => {
       messages = [{ role: 'user', content: `Contrato:\n\n${payload}` }];
     } else if (mode === 'images') {
       const imgs = payload as string[];
+      function detectMime(b64: string): string {
+        if (b64.startsWith('iVBOR')) return 'image/png';
+        if (b64.startsWith('R0lGO')) return 'image/gif';
+        return 'image/jpeg';
+      }
       messages = [{
         role: 'user',
         content: [
-          ...imgs.map((data: string) => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } })),
+          ...imgs.map((data: string) => ({ type: 'image', source: { type: 'base64', media_type: detectMime(data), data } })),
           { type: 'text', text: imgs.length > 1 ? `Contrato com ${imgs.length} páginas.` : 'Contrato.' },
         ],
       }];

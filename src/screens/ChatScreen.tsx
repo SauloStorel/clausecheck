@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { supabase } from '../services/supabase';
 import { sendChatMessage } from '../services/claude';
@@ -13,7 +12,6 @@ import { useTheme } from '../context/ThemeContext';
 import { F } from '../constants/theme';
 
 type Props = {
-  navigation: StackNavigationProp<RootStackParamList, 'Chat'>;
   route: RouteProp<RootStackParamList, 'Chat'>;
 };
 
