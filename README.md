@@ -104,11 +104,13 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | `View` | Estrutura de layout de todas as telas |
 | `Text` | Títulos, descrições, cláusulas, mensagens do chat |
 | `TextInput` | Campos de login, texto do contrato, busca e input do chat |
-| `TouchableOpacity` / `Button` | Botões de ação em todas as telas |
+| `TouchableOpacity` | Botões de ação em todas as telas |
 | `FlatList` | Histórico de contratos, lista de cláusulas e mensagens do chat |
-| `ScrollView` | Conteúdo em telas com muito texto (relatório, PDF preview) |
+| `ScrollView` | Conteúdo em telas com muito texto (relatório, onboarding, perfil) |
 | `Image` | Preview das fotos do contrato capturadas |
 | `ActivityIndicator` | Loading durante análise e busca de dados |
+| `KeyboardAvoidingView` | Evita que o teclado sobreponha o campo de input (Login, Chat) |
+| `SafeAreaView` | Respeita áreas seguras (notch, barra de status) em todas as telas |
 | **Flexbox Layout** | Layout responsivo em todas as telas |
 | **React Navigation Stack** | 9 telas conectadas com roteamento e animações |
 | **Animated** | Animações suaves (entrada de componentes, transições) |
@@ -134,7 +136,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | 4 | **Histórico** | `FlatList`, `TextInput` (busca), `TouchableOpacity` |
 | 5 | **Nova Análise** | `TextInput`, `Image`, `TouchableOpacity`, `ScrollView` |
 | 6 | **Relatório** | `ScrollView`, `FlatList`, `Text`, `View` |
-| 7 | **Prévia PDF** | `ScrollView`, `Text`, botões de ação |
+| 7 | **Prévia PDF** | `WebView` (react-native-webview), botões de ação |
 | 8 | **Chat** | `FlatList`, `TextInput`, `TouchableOpacity`, `ActivityIndicator` |
 | 9 | **Perfil** | `View`, `Text`, `TouchableOpacity`, tema claro/escuro |
 
@@ -437,7 +439,7 @@ O arquivo `app.json` contém metadados cruciais do app:
 |---|---|---|
 | `Analysis` | `src/types/index.ts` | Representa uma análise completa (ID, usuário, relatório, risco) |
 | `Report` | `src/types/index.ts` | Estrutura do relatório (resumo, cláusulas, recomendações) |
-| `Clause` | `src/types/index.ts` | Cláusula individual com risco, título, explicação |
+| `Clause` | `src/types/index.ts` | Cláusula individual com risco, título, explicação e campos opcionais (`affects_both_parties`, `severity_note`) |
 | `RiskLevel` | `src/types/index.ts` | Union type: `'high' \| 'medium' \| 'low'` |
 | `Message` | `src/types/index.ts` | Mensagem do chat (role: user/assistant, conteúdo, timestamp) |
 | `RootStackParamList` | `src/types/index.ts` | Tipos de params para React Navigation |
