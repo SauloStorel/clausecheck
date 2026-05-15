@@ -1,3 +1,5 @@
+// Referência dos prompts usados nas Edge Functions (analyze-contract e chat-contract).
+// Este arquivo não é importado pelo app — os prompts vivem diretamente nas Edge Functions.
 export const ANALYSIS_SYSTEM_PROMPT = `Você é um assistente jurídico brasileiro especializado em análise de contratos.
 Analise o contrato fornecido e retorne APENAS um JSON válido, sem texto adicional, com a seguinte estrutura:
 {

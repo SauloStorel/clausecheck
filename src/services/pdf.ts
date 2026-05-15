@@ -1,6 +1,5 @@
 import { printToFileAsync } from 'expo-print';
 import { shareAsync } from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
 import { Analysis } from '../types';
 
 type Risk = 'high' | 'medium' | 'low';

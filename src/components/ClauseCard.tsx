@@ -52,7 +52,7 @@ export function ClauseCard({ clause, isLast }: Props) {
   const styles = useMemo(() => makeStyles(C), [C]);
   const [expanded, setExpanded] = useState(false);
   const rotate = useRef(new Animated.Value(0)).current;
-  const { fg, bg } = riskColors[clause.risk];
+  const { fg, soft } = riskColors[clause.risk];
 
   const impactLine = extractImpact(clause.explanation);
   const sections = parseSections(clause.explanation);
@@ -89,7 +89,7 @@ export function ClauseCard({ clause, isLast }: Props) {
         <View style={styles.body}>
           {/* Tag de risco + título */}
           <View style={styles.topRow}>
-            <View style={[styles.riskTag, { backgroundColor: bg }]}>
+            <View style={[styles.riskTag, { backgroundColor: soft }]}>
               <Text style={[styles.riskTagText, { color: fg }]}>
                 {RISK_LABEL[clause.risk]}
               </Text>
