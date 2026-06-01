@@ -140,6 +140,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 
 ### 4.1 Tela de Onboarding
 
+![Onboarding](../assets/screenshots/onboarding.png)
+
 **Finalidade:** Apresentar o app ao usuário na primeira vez que ele abre o ClauseCheck.
 
 **Descrição:** Exibe 3 slides educativos sequenciais, cada um com ícone, título e descrição curta explicando o que o app faz. No final do último slide, o usuário escolhe entre tema claro ou escuro antes de prosseguir.
@@ -154,6 +156,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 ---
 
 ### 4.2 Tela de Login / Cadastro
+
+![Login](../assets/screenshots/login.png)
 
 **Finalidade:** Autenticar o usuário ou criar uma nova conta.
 
@@ -171,6 +175,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 
 ### 4.3 Tela Home (Dashboard)
 
+![Home](../assets/screenshots/historico.png)
+
 **Finalidade:** Ponto central do app. Exibe os contratos analisados pelo usuário e dá acesso às principais funcionalidades.
 
 **Descrição:** Lista os contratos analisados com título, nível de risco (badge colorido) e data. Cada item pode ser deslizado (swipe) para revelar a opção de exclusão. No topo, há o cabeçalho com o nome do usuário e um atalho para o perfil. No canto inferior direito, botão de ação flutuante (+) para iniciar nova análise.
@@ -187,6 +193,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 ---
 
 ### 4.4 Tela de Nova Análise
+
+![Nova Análise](../assets/screenshots/nova-analise.png)
 
 **Finalidade:** Permitir que o usuário envie um contrato para ser analisado pela IA.
 
@@ -206,6 +214,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 
 ### 4.5 Tela de Relatório
 
+![Relatório](../assets/screenshots/relatorio.png)
+
 **Finalidade:** Exibir o resultado completo da análise do contrato.
 
 **Descrição:** Mostra o nível de risco geral com badge colorido destacado, contadores por nível de risco (ex: "2 alto · 3 médio · 1 baixo"), o resumo executivo, a lista de cláusulas identificadas (expansíveis individualmente) e as recomendações ao final. Botões no topo permitem acessar o chat ou o PDF do relatório.
@@ -221,6 +231,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 
 ### 4.6 Tela de PDF Preview
 
+![PDF Preview](../assets/screenshots/pdf-preview.png)
+
 **Finalidade:** Exibir uma versão formatada do relatório no estilo de documento PDF para visualização e exportação.
 
 **Descrição:** Renderiza o relatório em HTML dentro de um WebView, com formatação de documento (cabeçalho, colunas, cores por nível de risco). Um botão no topo direito abre o menu nativo de compartilhamento do dispositivo.
@@ -234,6 +246,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 ---
 
 ### 4.7 Tela de Chat
+
+![Chat](../assets/screenshots/chat.png)
 
 **Finalidade:** Permitir conversa com a IA sobre dúvidas específicas do contrato analisado.
 
@@ -249,6 +263,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 ---
 
 ### 4.8 Tela de Histórico
+
+![Histórico](../assets/screenshots/historico.png)
 
 **Finalidade:** Buscar e filtrar entre todos os contratos já analisados pelo usuário.
 
@@ -267,6 +283,8 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 
 ### 4.9 Tela de Perfil
 
+![Perfil](../assets/screenshots/perfil.png)
+
 **Finalidade:** Exibir informações da conta do usuário e permitir configurações pessoais.
 
 **Descrição:** Exibe e-mail cadastrado, data de adesão ao app e quantidade total de análises realizadas. Contém switches e botões para configurações: alternar tema claro/escuro, redefinir senha e sair da conta.
@@ -284,53 +302,24 @@ Qualquer pessoa que realize cadastro no app. Após a autenticação, o usuário 
 
 ### 5.1 Diagrama de Fluxo
 
-```
-                    ┌───────────────┐
-                    │   ENTRADA     │
-                    │ (primeiro uso)│
-                    └───────┬───────┘
-                            │
-                     ┌──────▼──────┐
-                     │  Onboarding │
-                     │ (3 slides + │
-                     │   tema)     │
-                     └──────┬──────┘
-                            │
-                     ┌──────▼──────┐
-             ┌──────▶│    Login    │◀──────────────┐
-             │       │  /Cadastro  │               │
-             │       └──────┬──────┘               │
-             │              │ (autenticado)         │
-             │       ┌──────▼──────────────────┐   │
-             │       │         HOME            │   │
-             │       │  (lista de análises)    │   │
-             │       └─────┬──────┬──────┬─────┘   │
-             │             │      │      │          │
-             │          [+]│  [item] [Buscar]  [Perfil]
-             │             │      │      │          │
-             │    ┌────────▼┐  ┌──▼──┐  │   ┌──────▼──────┐
-             │    │  Nova   │  │Rel. │  │   │   Perfil    │
-             │    │ Análise │  │(via │  │   │  (config.)  │
-             │    └────┬────┘  │home)│  │   └──────┬──────┘
-             │         │       └──┬──┘  │          │
-             │    [análise]       │      │      [Sair]
-             │    concluída       │      │          │
-             │         │         │    ┌─▼────────┐ │
-             │    ┌────▼─────────▼──┐ │ Histórico│ │
-             │    │    RELATÓRIO    │◀┤  (busca  │ │
-             │    │(risco + cláus.) │ │  filtros)│ │
-             │    └───────┬─────┬───┘ └──────────┘ │
-             │            │     │                   │
-             │         [Chat] [PDF]                 │
-             │            │     │                   │
-             │    ┌───────▼┐   ┌▼──────────┐        │
-             │    │  Chat  │   │PDF Preview│        │
-             │    │(IA+hist│   │(export/   │        │
-             │    └────────┘   │compartilh)│        │
-             │                 └───────────┘        │
-             │                                      │
-             └──────────────────────────────────────┘
-                              (logout)
+```mermaid
+flowchart TD
+    START([Primeiro acesso]) --> OB[Onboarding\n3 slides + escolha de tema]
+    OB --> LG[Login / Cadastro]
+    LG -->|autenticado| HM[Home\nlista de análises]
+
+    HM -->|botão +| NA[Nova Análise\ncâmera · PDF · texto]
+    HM -->|toca em análise| RL[Relatório\nrisco + cláusulas]
+    HM -->|Buscar| HI[Histórico\nbusca e filtros]
+    HM -->|avatar| PF[Perfil\nconfigs]
+
+    NA -->|análise concluída| RL
+    HI -->|toca em análise| RL
+
+    RL -->|ícone chat| CH[Chat\nIA contextual]
+    RL -->|ícone PDF| PD[PDF Preview\nexportar/compartilhar]
+
+    PF -->|logout| LG
 ```
 
 ### 5.2 Tabela de Transições
@@ -575,6 +564,47 @@ Armazena artigos de legislação brasileira em formato vetorial, usados pelo sis
 ---
 
 ### 8.2 Diagrama de Relacionamentos (ER)
+
+> O código abaixo pode ser colado em [dbdiagram.io](https://dbdiagram.io) para gerar o diagrama visual.
+
+```dbml
+// ClauseCheck — Diagrama do Banco de Dados
+// Cole em https://dbdiagram.io para visualizar
+
+Table users {
+  id uuid [pk, note: "Gerenciado pelo Supabase Auth"]
+  email text [unique, not null]
+  created_at timestamptz
+}
+
+Table analyses {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  title text [not null]
+  input_text text [note: "Preenchido quando modo=texto"]
+  image_url text [note: "Preenchido quando modo=câmera"]
+  report jsonb [note: "JSON: risk_level, summary, clauses[], recommendations[]"]
+  risk_level text [note: "'high' | 'medium' | 'low'"]
+  created_at timestamptz
+}
+
+Table messages {
+  id uuid [pk]
+  analysis_id uuid [not null, ref: > analyses.id]
+  role text [not null, note: "'user' | 'assistant'"]
+  content text [not null]
+  created_at timestamptz
+}
+
+Table legal_chunks {
+  id uuid [pk]
+  content text [not null, note: "Texto do artigo de lei"]
+  source text [not null, note: "'CC/2002' | 'CDC' | 'CLT' | 'LEI_INQUILINATO'"]
+  article text [note: "Ex: 'Art. 421'"]
+  embedding vector [note: "1024 dimensões — Voyage Law-2"]
+  created_at timestamptz
+}
+```
 
 ```
 ┌─────────────────────────────────────────────────────────┐
