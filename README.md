@@ -1,43 +1,45 @@
-# ⚖️ ClauseCheck
+# ClauseCheck
 
-> Analise qualquer contrato com Inteligência Artificial. Foto, PDF ou texto — resultado em segundos.
+> Analise qualquer contrato com Inteligência Artificial. Foto, PDF ou texto - resultado em segundos.
 
 ---
 
-## 📱 Sobre o Projeto
+## Sobre o Projeto
 
 O **ClauseCheck** é um aplicativo mobile desenvolvido em React Native que permite ao usuário analisar contratos de forma simples e acessível. A maioria dos brasileiros assina contratos sem entendê-los por falta de acesso a assessoria jurídica. O ClauseCheck resolve isso: basta fotografar o contrato ou colar o texto, e a IA identifica cláusulas abusivas, explica cada ponto em linguagem simples e ainda fica disponível para tirar dúvidas via chat.
 
-**Disciplina:** Desenvolvimento para Dispositivos Móveis — AV2
+**Disciplina:** Desenvolvimento para Dispositivos Móveis - AV2
 **Professor:** Igor Revoredo
 **Período:** 3º Período
 
 ---
 
-## 🎨 Design de Referência
+## Design de Referência
 
-Layout inspirado no [Finance App UI Kit](https://www.figma.com/community/file/1108023684588587252/finance-app-ui-kit) — Figma Community.
+Layout inspirado no [Finance App UI Kit](https://www.figma.com/community/file/1108023684588587252/finance-app-ui-kit) - Figma Community.
+
 Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/escuro) seguindo as diretrizes do iOS Human Interface Guidelines.
 
 ---
 
-## 🚀 Funcionalidades
+## Funcionalidades
 
-- 📷 **Análise por foto** — fotografe o contrato impresso, a IA lê a imagem diretamente
-- 📄 **Análise por PDF** — envie o arquivo PDF para análise completa
-- 📝 **Análise por texto** — cole o conteúdo do contrato e receba o relatório
-- 🔴🟡🟢 **Relatório com semáforo de risco** — cláusulas classificadas por nível de perigo
-- 💬 **Chat jurídico contextual** — tire dúvidas específicas sobre o contrato com a IA
-- 🗂️ **Histórico de análises** — todos os contratos analisados ficam salvos
-- 🔐 **Autenticação segura** — login e cadastro via Supabase Auth
-- 🌙 **Tema claro/escuro** — interface adaptável à preferência do usuário
-- 🧠 **RAG Jurídico** — contexto legal real (CC/2002, CDC, CLT) injetado automaticamente nas análises
+- **Análise por foto** - fotografe o contrato impresso, a IA lê a imagem diretamente
+- **Análise por PDF** - envie o arquivo PDF para análise completa
+- **Análise por texto** - cole o conteúdo do contrato e receba o relatório
+- **Relatório com semáforo de risco** - cláusulas classificadas por nível de perigo
+- **Chat jurídico contextual** - tire dúvidas específicas sobre o contrato com a IA
+- **Histórico de análises** - todos os contratos analisados ficam salvos
+- **Autenticação segura** - login e cadastro via Supabase Auth
+- **Tema claro/escuro** - interface adaptável à preferência do usuário
+- **RAG Jurídico** - contexto legal real (CC/2002, CDC, CLT) injetado automaticamente nas análises
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 ### Core Framework
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [React Native](https://reactnative.dev/) | 0.81.5 | Framework mobile multiplataforma |
@@ -46,6 +48,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | [TypeScript](https://www.typescriptlang.org/) | 5.9.2 | Tipagem estática e segurança de tipos |
 
 ### Navegação e Interface
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [React Navigation](https://reactnavigation.org/) | 7.2.2 | Stack navigation entre telas |
@@ -56,19 +59,22 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | [@ronradtke/react-native-markdown-display](https://github.com/ronradtke/react-native-markdown-display) | 8.1.0 | Renderização de markdown nas respostas da IA |
 
 ### Backend e Autenticação
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [Supabase](https://supabase.com/) | 2.105.3 | Autenticação, banco de dados, Edge Functions e vetores |
 | [@react-native-async-storage/async-storage](https://github.com/react-native-async-storage/async-storage) | 2.2.0 | Armazenamento local de dados (sessões, cache) |
 
 ### IA e RAG
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [Anthropic Claude API](https://www.anthropic.com/) | claude-opus-4-6 | Análise de contratos e chat jurídico com IA |
 | [Voyage AI](https://www.voyageai.com/) | voyage-law-2 | Geração de embeddings especializados em textos jurídicos |
 | [pgvector](https://github.com/pgvector/pgvector) | extensão Postgres | Busca por similaridade vetorial para RAG |
 
-### Capture e Processamento de Documentos
+### Captura e Processamento de Documentos
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [expo-image-picker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) | 17.0.11 | Câmera e galeria para captura de contratos |
@@ -76,12 +82,14 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | [expo-file-system](https://docs.expo.dev/versions/latest/sdk/filesystem/) | 19.0.22 | Acesso ao sistema de arquivos do dispositivo |
 
 ### Exportação e Compartilhamento
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [expo-print](https://docs.expo.dev/versions/latest/sdk/print/) | 15.0.8 | Geração e impressão de PDF do relatório |
 | [expo-sharing](https://docs.expo.dev/versions/latest/sdk/sharing/) | 14.0.8 | Compartilhamento de relatórios via apps |
 
 ### Feedback e UX
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [expo-haptics](https://docs.expo.dev/versions/latest/sdk/haptics/) | 15.0.8 | Feedback tátil nas interações |
@@ -89,6 +97,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 | [expo-font](https://docs.expo.dev/versions/latest/sdk/font/) | 14.0.11 | Carregamento de fontes customizadas |
 
 ### Compatibilidade
+
 | Tecnologia | Versão | Finalidade |
 |---|---|---|
 | [react-native-url-polyfill](https://github.com/react-native-community/url-polyfill) | 3.0.0 | Polyfill de URL para compatibilidade |
@@ -97,7 +106,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 
 ---
 
-## ✅ Componentes React Native Utilizados
+## Componentes React Native Utilizados
 
 | Componente | Uso no App |
 |---|---|
@@ -117,7 +126,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 
 ---
 
-## 🎪 Custom Hooks Utilizados
+## Custom Hooks Utilizados
 
 | Hook | Localização | Função |
 |---|---|---|
@@ -126,7 +135,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 
 ---
 
-## 📲 Telas do Aplicativo
+## Telas do Aplicativo
 
 | # | Tela | Componentes Principais |
 |---|---|---|
@@ -142,7 +151,7 @@ Adaptado para o contexto jurídico com sistema de cores próprio (modo claro/esc
 
 ---
 
-## 🧠 Arquitetura RAG (Retrieval-Augmented Generation)
+## Arquitetura RAG (Retrieval-Augmented Generation)
 
 O ClauseCheck utiliza **RAG Jurídico** para enriquecer as análises com legislação real brasileira. Em vez de depender apenas do conhecimento geral da IA, o sistema recupera artigos específicos do banco de dados e os injeta no contexto antes de gerar a análise.
 
@@ -172,22 +181,22 @@ Relatório retorna com fundamentação jurídica precisa
 | **Armazenamento vetorial** | Supabase + `pgvector` | Tabela `legal_chunks` com vetores de 1024 dimensões |
 | **Busca por similaridade** | Índice HNSW + cosine distance | Função RPC `search_legal_chunks` |
 | **Ingestão de documentos** | Edge Function `ingest-documents` | Processa e indexa nova legislação em lotes |
-| **Integração na análise** | Edge Functions `analyze-contract` e `chat-contract` | RAG com falha silenciosa — funciona mesmo sem contexto |
+| **Integração na análise** | Edge Functions `analyze-contract` e `chat-contract` | RAG com falha silenciosa - funciona mesmo sem contexto |
 
 ### Bases legais indexadas
 
-- **CC/2002** — Código Civil Brasileiro
-- **CDC** — Código de Defesa do Consumidor
-- **CLT** — Consolidação das Leis do Trabalho
-- **Lei do Inquilinato** — Lei 8.245/91
+- **CC/2002** - Código Civil Brasileiro
+- **CDC** - Código de Defesa do Consumidor
+- **CLT** - Consolidação das Leis do Trabalho
+- **Lei do Inquilinato** - Lei 8.245/91
 
 ---
 
-## 🗄️ Banco de Dados — Supabase
+## Banco de Dados - Supabase
 
 ### Tabelas
 
-**`analyses`** — armazena cada contrato analisado
+**`analyses`** - armazena cada contrato analisado
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -200,7 +209,7 @@ Relatório retorna com fundamentação jurídica precisa
 | `risk_level` | text | Nível de risco geral: `high`, `medium` ou `low` |
 | `created_at` | timestamptz | Data da análise |
 
-**`messages`** — armazena o histórico de chat por contrato
+**`messages`** - armazena o histórico de chat por contrato
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -210,7 +219,7 @@ Relatório retorna com fundamentação jurídica precisa
 | `content` | text | Conteúdo da mensagem |
 | `created_at` | timestamptz | Data da mensagem |
 
-**`legal_chunks`** — base vetorial de legislação brasileira
+**`legal_chunks`** - base vetorial de legislação brasileira
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -224,7 +233,7 @@ Row Level Security ativado em todas as tabelas: cada usuário acessa apenas seus
 
 ---
 
-## ⚙️ Instalação e Execução
+## Instalação e Execução
 
 ### O que você precisa instalar
 
@@ -235,6 +244,7 @@ Row Level Security ativado em todas as tabelas: cada usuário acessa apenas seus
 | [Expo Go](https://expo.dev/go) | Última | App Store / Google Play no celular |
 
 Além disso, você precisa ter:
+
 - Conta gratuita no [Supabase](https://supabase.com/)
 - Chave de API da [Anthropic](https://console.anthropic.com/)
 - Chave de API da [Voyage AI](https://www.voyageai.com/) (para o RAG)
@@ -264,7 +274,7 @@ npm install
 cp .env.example .env
 ```
 
-Edite o `.env` com as credenciais do seu projeto Supabase (encontradas em **Project Settings → API**):
+Edite o `.env` com as credenciais do seu projeto Supabase (encontradas em **Project Settings > API**):
 
 ```env
 # Supabase API (obrigatório para o app rodar)
@@ -272,11 +282,11 @@ EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key-aqui
 ```
 
-⚠️ **Nota:** As credenciais das APIs (Anthropic e Voyage) são configuradas como **secrets** nas Edge Functions do Supabase (veja passo 5.3), não no `.env` do cliente.
+**Nota:** As credenciais das APIs (Anthropic e Voyage) são configuradas como **secrets** nas Edge Functions do Supabase (veja passo 5.3), não no `.env` do cliente.
 
 ### 4. Criar as tabelas no Supabase
 
-Acesse seu projeto no Supabase → **SQL Editor** e execute:
+Acesse seu projeto no Supabase > **SQL Editor** e execute:
 
 ```sql
 -- Tabela de análises
@@ -317,17 +327,20 @@ Ou manualmente no SQL Editor, execute o conteúdo de `supabase/migrations/202605
 
 ### 5. Fazer deploy das Edge Functions
 
-**5.1 — Login no Supabase CLI**
+**5.1 - Login no Supabase CLI**
+
 ```bash
 supabase login
 ```
 
-**5.2 — Vincular ao seu projeto**
+**5.2 - Vincular ao seu projeto**
+
 ```bash
 supabase link --project-ref SEU_PROJECT_REF
 ```
 
-**5.3 — Configurar secrets**
+**5.3 - Configurar secrets**
+
 ```bash
 supabase secrets set ANTHROPIC_API_KEY=sua-chave-anthropic
 supabase secrets set VOYAGE_API_KEY=sua-chave-voyage
@@ -336,7 +349,8 @@ supabase secrets set INGEST_SECRET=uma-senha-secreta-para-ingestao
 
 > `INGEST_SECRET` é uma senha que protege o endpoint da Edge Function `ingest-documents`, impedindo que qualquer pessoa acione a ingestão de documentos sem autorização. Escolha um valor longo e aleatório.
 
-**5.4 — Fazer o deploy das funções**
+**5.4 - Fazer o deploy das funções**
+
 ```bash
 supabase functions deploy analyze-contract
 supabase functions deploy chat-contract
@@ -355,7 +369,7 @@ curl -X POST https://SEU_PROJETO.supabase.co/functions/v1/ingest-documents \
   -d '{"source": "CDC"}'
 ```
 
-Repita para cada base (`CC2002`, `CDC`, `CLT`, `LeiInquilinato`). Este passo é necessário para que o RAG funcione — sem ele, as análises ainda funcionam, mas sem fundamentação legal.
+Repita para cada base (`CC2002`, `CDC`, `CLT`, `LeiInquilinato`). Este passo é necessário para que o RAG funcione - sem ele, as análises ainda funcionam, mas sem fundamentação legal.
 
 ### 7. Rodar o app
 
@@ -367,7 +381,7 @@ Escaneie o QR Code com o **Expo Go** no celular.
 
 ---
 
-## 🔧 Configuração do Expo (`app.json`)
+## Configuração do Expo (`app.json`)
 
 O arquivo `app.json` contém metadados cruciais do app:
 
@@ -392,14 +406,14 @@ O arquivo `app.json` contém metadados cruciais do app:
 }
 ```
 
-> ⚠️ JSON não suporta comentários — o arquivo real não deve conter `//`. As notas abaixo explicam os campos relevantes:
+> JSON não suporta comentários - o arquivo real não deve conter `//`. As notas abaixo explicam os campos relevantes:
 >
-> - **`newArchEnabled: true`** — Ativa a New Architecture do React Native (Fabric + JSI), com melhor performance e suporte a concorrência. Compatível com Expo SDK 54+.
-> - **`plugins: ["expo-font"]`** — Necessário para carregar fontes customizadas via `expo-font`.
+> - **`newArchEnabled: true`**: Ativa a New Architecture do React Native (Fabric + JSI), com melhor performance e suporte a concorrência. Compatível com Expo SDK 54+.
+> - **`plugins: ["expo-font"]`**: Necessário para carregar fontes customizadas via `expo-font`.
 
 ---
 
-## 📲 Telas do Aplicativo — Screenshots
+## Telas do Aplicativo - Screenshots
 
 <table>
   <tr>
@@ -433,7 +447,7 @@ O arquivo `app.json` contém metadados cruciais do app:
 
 ---
 
-## 📦 Tipos TypeScript Principais
+## Tipos TypeScript Principais
 
 | Tipo | Localização | Descrição |
 |---|---|---|
@@ -446,7 +460,7 @@ O arquivo `app.json` contém metadados cruciais do app:
 
 ---
 
-## 🏗️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 clausecheck/
@@ -462,7 +476,7 @@ clausecheck/
 │   │   ├── ChatScreen.tsx         # Chat contextual com a IA
 │   │   └── PerfilScreen.tsx       # Perfil e configurações do usuário
 │   ├── components/
-│   │   ├── RiskBadge.tsx          # Badge 🔴🟡🟢 de risco
+│   │   ├── RiskBadge.tsx          # Badge de risco (alto/médio/baixo)
 │   │   ├── ClauseCard.tsx         # Card expansível de cláusula
 │   │   ├── MessageBubble.tsx      # Bolha de mensagem do chat
 │   │   ├── AnalysisItem.tsx       # Item da lista de histórico
@@ -508,55 +522,60 @@ clausecheck/
 
 ---
 
-## 💾 Serviços e Utilitários
+## Serviços e Utilitários
 
-### **pdf.ts** — Geração e Renderização de PDF
-- `buildReportHTML()` — Converte o relatório para HTML formatado
-- `generatePDFUri()` — Gera PDF do relatório usando `expo-print`
-- `sharePDF()` — Compartilha PDF via `expo-sharing`
+### pdf.ts - Geração e Renderização de PDF
 
-### **pdfCache.ts** — Cache em Memória de PDFs
-- `primeCache()` — Pré-renderiza e cacheia HTML do PDF (otimização)
-- `getCachedHTML()` — Retorna HTML em cache se disponível
-- `getCachedAnalysis()` — Retorna dados da análise em cache
+- `buildReportHTML()` - Converte o relatório para HTML formatado
+- `generatePDFUri()` - Gera PDF do relatório usando `expo-print`
+- `sharePDF()` - Compartilha PDF via `expo-sharing`
+
+### pdfCache.ts - Cache em Memória de PDFs
+
+- `primeCache()` - Pré-renderiza e cacheia HTML do PDF (otimização)
+- `getCachedHTML()` - Retorna HTML em cache se disponível
+- `getCachedAnalysis()` - Retorna dados da análise em cache
 - **Por quê:** Evita re-renderização desnecessária ao navegar entre telas
 
-### **claude.ts** — Integração com Edge Functions
-- `analyzeContract()` — Envia contrato (texto/imagem/PDF) para análise
-- `chatWithContract()` — Envia pergunta para chat contextual
+### claude.ts - Integração com Edge Functions
 
-### **supabase.ts** — Cliente Supabase
-- Instância pre-configurada com URL e chave de API
+- `analyzeContract()` - Envia contrato (texto/imagem/PDF) para análise
+- `chatWithContract()` - Envia pergunta para chat contextual
+
+### supabase.ts - Cliente Supabase
+
+- Instância pré-configurada com URL e chave de API
 - Autenticação, banco de dados e Edge Functions
 
 ---
 
-## 🧠 Sistema de Prompts
+## Sistema de Prompts
 
 O arquivo `src/constants/prompts.ts` define os prompts enviados para Claude, incluindo:
+
 - Prompt de análise de cláusulas com classificação de risco
 - Contexto jurídico injetado via RAG (Código Civil, CDC, CLT)
 - Instruções para gerar respostas em JSON estruturado
 
-Os prompts são críticos para a qualidade das análises — mudanças aqui impactam diretamente a precisão do AI.
+Os prompts são críticos para a qualidade das análises - mudanças aqui impactam diretamente a precisão do AI.
 
 ---
 
-## 👥 Integrantes e Contribuições
+## Integrantes e Contribuições
 
 | Membro | Responsabilidade |
 |---|---|
-| Saulo José Storel de Moura Abreu | Desenvolvimento completo do app — todas as telas, componentes, serviços, arquitetura RAG e integrações |
+| Saulo José Storel de Moura Abreu | Desenvolvimento completo do app - todas as telas, componentes, serviços, arquitetura RAG e integrações |
 
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
 
 ---
 
-## 📞 Contato
+## Contato
 
 - **GitHub Issues:** Para bugs e sugestões
 - **Email:** saulostorell@gmail.com
